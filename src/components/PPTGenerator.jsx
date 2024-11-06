@@ -15,14 +15,15 @@ function PPTGen() {
   // State for toggling between "Generate PPT" and "Show List"
   const [view, setView] = useState("generate");
   const [blobList, setBlobList] = useState([]);
-  const [slideName, setSlideName] = useState(`PPT-${blobList.length + 1}`);
+  const [slideMode, setSlideMode] = useState("text");
+  const [slideName, setSlideName] = useState(`PPT-${slideMode}-${blobList.length + 1}`);
   const [imageURL, setImageURL] = useState(
     "https://media.istockphoto.com/id/1241682184/photo/bird-on-top-of-a-stick.jpg?s=2048x2048&w=is&k=20&c=kFLLe-NPodHtMIlvHbtNMNXUfTJyddny_BMpGY9diFE="
   );
-  const [slideMode, setSlideMode] = useState("text");
+
   const ppt_object = {
     text: {
-      content: "Codemonk PPT Generator!",
+      content: "Hey I am PPT Generator!",
       options: {
         x: 1,
         y: 1,
@@ -109,6 +110,11 @@ function PPTGen() {
     setPptOptions(ppt_object[slideMode].options);
   }, [slideMode]);
 
+  useEffect(() => {
+    
+    setSlideName(`PPT-${slideMode}-${blobList.length + 1}`)
+  }, [slideMode]);
+
   const handleInputChange = (e) => {
     setSlideName(e.target.value);
   };
@@ -135,7 +141,7 @@ function PPTGen() {
     }
     console.log("returnedBlobUrls", returnedBlobUrls);
     setBlobList(returnedBlobUrls);
-    setSlideName(`PPT-${returnedBlobUrls?.length + 1}`);
+    setSlideName(`PPT-${slideMode}-${returnedBlobUrls?.length + 1}`);
     return returnedBlobUrls;
   };
 
@@ -161,6 +167,7 @@ function PPTGen() {
       });
 
       alert("PPT uploaded successfully!");
+      setView("list");
 
       const fileUrl = `https://${storageAccountName}.blob.core.windows.net/${containerName}/${fileName}`;
       console.log("File URL:", fileUrl);
@@ -179,29 +186,34 @@ function PPTGen() {
     let pptx = new pptxgen();
     let slide = pptx.addSlide();
 
-    console.log("slideMode",slideMode);
+
+
+    console.log("slideMode", slideMode);
     console.log("ppt", pptContent);
     console.log("pptOptions", pptOptions);
 
     if (slideMode == "text") {
+      slide.background = { color: "E0F7FA" }
       slide.addText(pptContent, pptOptions);
     }
 
     if (slideMode == "image") {
+      slide.background = { color: "FFF9C4" };
       slide.addImage({
         path: imageURL,
-       ...pptOptions
+        ...pptOptions,
       });
     }
 
     if (slideMode == "chart") {
+      slide.background = { color: "E1F5FE" };
       slide.addChart(pptx.ChartType.line, pptContent, pptOptions);
     }
 
     if (slideMode == "table") {
+      slide.background = { color: "FCE4EC" };
       slide.addTable(pptContent, pptOptions);
     }
-
 
     console.log("came hgere");
     // Generate the PPT file as a Blob
@@ -258,22 +270,22 @@ function PPTGen() {
         {/* Left Side: Navigation and Content Input */}
         <div className="w-1/3 p-6 border-r border-gray-300 bg-white">
           {/* Navbar */}
-          <nav className="mb-6 flex space-x-4 ">
+          <nav className="mb-6 flex space-x-4 border-b pb-2">
             <span
-              className={`cursor-pointer ${
+              className={`cursor-pointer px-3 py-2 rounded transition ${
                 view === "generate"
-                  ? "font-bold underline bg-gray-800 text-white px-2 py-1 rounded-md"
-                  : ""
+                  ? "font-semibold text-white bg-gray-800 border-b-2 border-blue-500"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
               }`}
               onClick={() => setView("generate")}
             >
               Generate PPT
             </span>
             <span
-              className={`cursor-pointer ${
+              className={`cursor-pointer px-3 py-2 rounded transition ${
                 view === "list"
-                  ? "font-bold underline bg-gray-800 text-white px-2 py-1 rounded-md"
-                  : ""
+                  ? "font-semibold text-white bg-gray-800 border-b-2 border-blue-500"
+                  : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
               }`}
               onClick={() => setView("list")}
             >
@@ -326,9 +338,27 @@ function PPTGen() {
                   </label>
                   <textarea
                     placeholder="Enter PPT Gen syntax here"
-                    value={JSON.stringify(pptContent)}
-                    onChange={(e) => setPptContent(JSON.parse(e.target.value))}
-                    className="w-full h-[30vh] p-2 mb-4 border border-gray-300 rounded mb-2"
+                    value={
+                      typeof pptContent === "object"
+                        ? JSON.stringify(pptContent, null, 2)
+                        : pptContent
+                    }
+                    onChange={(e) => {
+                      const inputValue = e.target.value;
+                      // setInputValue(inputValue); // Update textarea with user's changes
+
+                      try {
+                        const parsedContent =
+                          typeof inputValue === "object"
+                            ? JSON.parse(inputValue)
+                            : inputValue; // Try to parse the JSON string
+                        setPptContent(parsedContent); // Update pptContent if parsing is successful
+                      } catch (error) {
+                        console.error("Invalid JSON format", error);
+                        // Optionally, show a warning message to the user about invalid JSON
+                      }
+                    }}
+                    className="w-full h-[20vh] p-2  border border-gray-300 rounded mb-2"
                   />
                 </div>
               ) : (
@@ -362,8 +392,26 @@ function PPTGen() {
               </label>
               <textarea
                 placeholder="Enter PPT Gen Options here"
-                value={JSON.stringify(pptOptions)}
-                onChange={(e) => setPptOptions(JSON.parse(e.target.value))}
+                value={
+                  typeof pptOptions === "object"
+                    ? JSON.stringify(pptOptions, null, 2)
+                    : pptOptions
+                }
+                onChange={(e) => {
+                  const inputValue = e.target.value;
+                  // setInputValue(inputValue); // Update textarea with user's changes
+
+                  try {
+                    const parsedContent =
+                      typeof inputValue === "object"
+                        ? JSON.parse(inputValue)
+                        : inputValue; // Try to parse the JSON string
+                    setPptContent(pptOptions); // Update pptContent if parsing is successful
+                  } catch (error) {
+                    console.error("Invalid JSON format", error);
+                    // Optionally, show a warning message to the user about invalid JSON
+                  }
+                }}
                 className="w-full h-[20vh] p-2 mb-4 border border-gray-300 rounded"
               />
               <button
