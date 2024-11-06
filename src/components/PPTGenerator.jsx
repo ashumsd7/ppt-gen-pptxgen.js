@@ -3,6 +3,8 @@ import React, { useEffect, useState } from "react";
 import pptxgen from "pptxgenjs";
 import { BlobServiceClient } from "@azure/storage-blob";
 import { DocumentViewer } from "react-documents";
+import HoverButton from "./HoverButton";
+import HoverButtonV2 from "./HoverButtoonv2";
 
 // Tab data
 const tabs = [
@@ -265,6 +267,8 @@ function PPTGen() {
       <div className="bg-gray-200 h-[78px] flex justify-start items-center">
         <h1 className="text-3xl px-4 font-bold py-2 w-[200px]">PPT GEN</h1>
       </div>
+      {/* <HoverButton/> */}
+      <HoverButtonV2/>
       <div className="flex h-[90vh] bg-gray-100">
         {/* Left Side: Navigation and Content Input */}
         <div className="w-1/3 p-6 border-r border-gray-300 bg-white">
