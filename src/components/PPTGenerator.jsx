@@ -13,7 +13,7 @@ const tabs = [
 ];
 function PPTGen() {
   // State for toggling between "Generate PPT" and "Show List"
-  const [view, setView] = useState("generate");
+  const [view, setView] = useState("list");
   const [blobList, setBlobList] = useState([]);
   const [slideMode, setSlideMode] = useState("text");
   const [slideName, setSlideName] = useState(`PPT-${slideMode}-${blobList.length + 1}`);
@@ -264,7 +264,8 @@ function PPTGen() {
   return (
     <>
       <div className="bg-gray-200 h-[78px] flex justify-start items-center">
-        <h1 className="text-3xl px-4 font-bold py-2">PPT GEN</h1>
+        <h1 className="text-3xl px-4 font-bold py-2 w-[200px]">PPT GEN</h1>
+        
       </div>
       <div className="flex h-[90vh] bg-gray-100">
         {/* Left Side: Navigation and Content Input */}
@@ -279,7 +280,7 @@ function PPTGen() {
               }`}
               onClick={() => setView("generate")}
             >
-              Generate PPT
+             Generate new PPT 
             </span>
             <span
               className={`cursor-pointer px-3 py-2 rounded transition ${
@@ -289,7 +290,7 @@ function PPTGen() {
               }`}
               onClick={() => setView("list")}
             >
-              Show List
+              Show PPT List
             </span>
           </nav>
 
@@ -367,7 +368,7 @@ function PPTGen() {
                     htmlFor="slideName"
                     className="text-sm font-semibold text-gray-700"
                   >
-                    Enter Image URL:
+                    Enter Image URL: ( cross free)
                   </label>
                   <div className="flex gap-2 items-center mb-2">
                     <input
@@ -453,6 +454,7 @@ function PPTGen() {
 
         {/* Right Side: PPT Viewer */}
         <div className="w-2/3 p-6 bg-gray-50">
+        <marquee>This is just a (POC) Proof of concept: A process to demonstrate the feasibility of a product,</marquee>
           {latestBlob && view !== "generate" ? (
             <div style={{ marginTop: "20px", padding: "10px", width: "100%" }}>
               <DocumentViewer
@@ -465,7 +467,7 @@ function PPTGen() {
               />
             </div> // Replace with actual rendering logic for PPT
           ) : (
-            <p className="text-gray-500">
+            <p className=" text-4xl text-orange-500 pt-10">
               {view == "generate"
                 ? "No Preview in edit mode"
                 : "No PPT content generated yet."}
