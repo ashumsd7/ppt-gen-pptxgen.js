@@ -302,7 +302,7 @@ function PPTGen() {
                     onClick={() => setSlideMode(tab.value)}
                     className={`cursor-pointer px-4 py-2 rounded ${
                       slideMode === tab.value
-                        ? "bg-blue-500 text-white font-semibold"
+                        ? "bg-gray-600 text-white font-semibold"
                         : "bg-white text-gray-700 hover:bg-gray-200"
                     }`}
                   >
