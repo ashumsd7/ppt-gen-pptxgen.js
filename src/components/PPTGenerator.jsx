@@ -16,7 +16,9 @@ function PPTGen() {
   const [view, setView] = useState("list");
   const [blobList, setBlobList] = useState([]);
   const [slideMode, setSlideMode] = useState("text");
-  const [slideName, setSlideName] = useState(`PPT-${slideMode}-${blobList.length + 1}`);
+  const [slideName, setSlideName] = useState(
+    `PPT-${slideMode}-${blobList.length + 1}`
+  );
   const [imageURL, setImageURL] = useState(
     "https://media.istockphoto.com/id/1241682184/photo/bird-on-top-of-a-stick.jpg?s=2048x2048&w=is&k=20&c=kFLLe-NPodHtMIlvHbtNMNXUfTJyddny_BMpGY9diFE="
   );
@@ -111,8 +113,7 @@ function PPTGen() {
   }, [slideMode]);
 
   useEffect(() => {
-    
-    setSlideName(`PPT-${slideMode}-${blobList.length + 1}`)
+    setSlideName(`PPT-${slideMode}-${blobList.length + 1}`);
   }, [slideMode]);
 
   const handleInputChange = (e) => {
@@ -186,14 +187,12 @@ function PPTGen() {
     let pptx = new pptxgen();
     let slide = pptx.addSlide();
 
-
-
     console.log("slideMode", slideMode);
     console.log("ppt", pptContent);
     console.log("pptOptions", pptOptions);
 
     if (slideMode == "text") {
-      slide.background = { color: "E0F7FA" }
+      slide.background = { color: "E0F7FA" };
       slide.addText(pptContent, pptOptions);
     }
 
@@ -265,7 +264,6 @@ function PPTGen() {
     <>
       <div className="bg-gray-200 h-[78px] flex justify-start items-center">
         <h1 className="text-3xl px-4 font-bold py-2 w-[200px]">PPT GEN</h1>
-        
       </div>
       <div className="flex h-[90vh] bg-gray-100">
         {/* Left Side: Navigation and Content Input */}
@@ -280,7 +278,7 @@ function PPTGen() {
               }`}
               onClick={() => setView("generate")}
             >
-             Generate new PPT 
+              Generate new PPT
             </span>
             <span
               className={`cursor-pointer px-3 py-2 rounded transition ${
@@ -454,7 +452,10 @@ function PPTGen() {
 
         {/* Right Side: PPT Viewer */}
         <div className="w-2/3 p-6 bg-gray-50">
-        <marquee>This is just a (POC) Proof of concept: A process to demonstrate the feasibility of a product,</marquee>
+          <marquee>
+            This is just a (POC) Proof of concept: A process to demonstrate the
+            feasibility of a product,
+          </marquee>
           {latestBlob && view !== "generate" ? (
             <div style={{ marginTop: "20px", padding: "10px", width: "100%" }}>
               <DocumentViewer
@@ -468,9 +469,20 @@ function PPTGen() {
             </div> // Replace with actual rendering logic for PPT
           ) : (
             <p className=" text-4xl text-orange-500 pt-10">
-              {view == "generate"
-                ? "No Preview in edit mode"
-                : "No PPT content generated yet."}
+              {view == "generate" ? (
+                <>
+                  <div> No Preview in edit mode</div>
+
+                  <span
+                    className={`cursor-pointer px-3 py-2 rounded transition border bg-gray-500 text-white text-sm `}
+                    onClick={() => setView("list")}
+                  >
+                  Show Preview Mode
+                  </span>
+                </>
+              ) : (
+                "No PPT content generated yet."
+              )}
             </p>
           )}
         </div>
