@@ -3,26 +3,128 @@ import React, { useEffect, useState } from "react";
 import pptxgen from "pptxgenjs";
 import { BlobServiceClient } from "@azure/storage-blob";
 import { DocumentViewer } from "react-documents";
+
+// Tab data
+const tabs = [
+  { label: "Text", value: "text" },
+  { label: "Image", value: "image" },
+  { label: "Chart", value: "chart" },
+  { label: "Table", value: "table" },
+];
 function PPTGen() {
   // State for toggling between "Generate PPT" and "Show List"
   const [view, setView] = useState("generate");
+  const [blobList, setBlobList] = useState([]);
+  const [slideName, setSlideName] = useState(`PPT-${blobList.length + 1}`);
+  const [imageURL, setImageURL] = useState(
+    "https://media.istockphoto.com/id/1241682184/photo/bird-on-top-of-a-stick.jpg?s=2048x2048&w=is&k=20&c=kFLLe-NPodHtMIlvHbtNMNXUfTJyddny_BMpGY9diFE="
+  );
+  const [slideMode, setSlideMode] = useState("text");
+  const ppt_object = {
+    text: {
+      content: "Codemonk PPT Generator!",
+      options: {
+        x: 1,
+        y: 1,
+        w: 10,
+        fontSize: 36,
+        fill: { color: "F1F1F1" },
+        align: "center",
+      },
+    },
+    image: {
+      content: imageURL,
+      options: {
+        x: 1,
+        y: 2,
+        w: 3,
+        h: 2,
+      },
+    },
+    chart: {
+      content: [
+        {
+          name: "Actual Sales",
+          labels: [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+          ],
+          values: [
+            1500, 4600, 5156, 3167, 8510, 8009, 6006, 7855, 12102, 12789, 10123,
+            15121,
+          ],
+        },
+        {
+          name: "Projected Sales",
+          labels: [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+          ],
+          values: [
+            1000, 2600, 3456, 4567, 5010, 6009, 7006, 8855, 9102, 10789, 11123,
+            12121,
+          ],
+        },
+      ],
+      options: { x: 1, y: 1, w: 8, h: 4 },
+    },
+    table: {
+      content: [
+        [
+          { text: "Top Lft", options: { align: "left", fontFace: "Arial" } },
+          {
+            text: "Top Ctr",
+            options: { align: "center", fontFace: "Verdana" },
+          },
+          { text: "Top Rgt", options: { align: "right", fontFace: "Courier" } },
+        ],
+      ],
+      options: { w: 9, rowH: 1, align: "left", fontFace: "Arial" },
+    },
+  };
 
+  useEffect(() => {
+    console.log(ppt_object[slideMode]);
+    setPptContent(ppt_object[slideMode].content);
+    setPptOptions(ppt_object[slideMode].options);
+  }, [slideMode]);
+
+  const handleInputChange = (e) => {
+    setSlideName(e.target.value);
+  };
   const sasToken =
     "sv=2022-11-02&ss=bfqt&srt=sco&sp=rwdlacupiytfx&se=2025-06-04T13:26:22Z&st=2024-11-05T05:26:22Z&spr=https,http&sig=pAcLQDyT%2BRNtUABOSobtIhb%2FuSA43rbiU0btYf%2FVttw%3D";
   const containerName = `cmpptgencontainerv1`;
   const storageAccountName = "codemonkpptgen";
   // State to store text input for generating PPT
-
   // State to store generated PPT data
   const [pptData, setPptData] = useState(null);
 
-  const [blobList, setBlobList] = useState([]);
   const [latestBlob, setLatestBlob] = useState(
     "https://testingfeatures.blob.core.windows.net/test/POC%20(1).pptx?sp=r&st=2024-10-25T06:18:48Z&se=2024-11-25T14:18:48Z&spr=https&sv=2022-11-02&sr=b&sig=NtLNYZO3tUTV9IhjnKJIKv2d7ePXcEHnQd%2F02IXvQlg%3D"
   );
   const [pptContent, setPptContent] = useState("");
-  let pptx = new pptxgen();
-
+  const [pptOptions, setPptOptions] = useState("");
   const getBlobsInContainer = async (containerClient) => {
     const returnedBlobUrls = [];
     for await (const blob of containerClient.listBlobsFlat()) {
@@ -33,6 +135,7 @@ function PPTGen() {
     }
     console.log("returnedBlobUrls", returnedBlobUrls);
     setBlobList(returnedBlobUrls);
+    setSlideName(`PPT-${returnedBlobUrls?.length + 1}`);
     return returnedBlobUrls;
   };
 
@@ -70,24 +173,35 @@ function PPTGen() {
 
   // Function to generate the PPT and upload to Azure Blob Storage
   async function generateAndUploadPPT() {
-    const pptContent = window.prompt("Enter content for the PPT:");
+    // const pptContent = window.prompt("Enter content for the PPT:");
 
     // Create a new PowerPoint presentation
     let pptx = new pptxgen();
     let slide = pptx.addSlide();
-    slide.addText(
-      `Codemonk PPT Generator! Number :  ${
-        blobList.length + 1
-      } Text is : ${pptContent} `,
-      {
-        x: 1,
-        y: 1,
-        w: 10,
-        fontSize: 36,
-        fill: { color: "F1F1F1" },
-        align: "center",
-      }
-    );
+
+    console.log("slideMode",slideMode);
+    console.log("ppt", pptContent);
+    console.log("pptOptions", pptOptions);
+
+    if (slideMode == "text") {
+      slide.addText(pptContent, pptOptions);
+    }
+
+    if (slideMode == "image") {
+      slide.addImage({
+        path: imageURL,
+       ...pptOptions
+      });
+    }
+
+    if (slideMode == "chart") {
+      slide.addChart(pptx.ChartType.line, pptContent, pptOptions);
+    }
+
+    if (slideMode == "table") {
+      slide.addTable(pptContent, pptOptions);
+    }
+
 
     console.log("came hgere");
     // Generate the PPT file as a Blob
@@ -105,10 +219,7 @@ function PPTGen() {
       });
 
       // Upload the Blob to Azure Blob Storage
-      const res = await uploadFileToBlob2(
-        pptBlob,
-        `PPT-${blobList.length + 1}.pptx`
-      );
+      const res = await uploadFileToBlob2(pptBlob, `${slideName}.pptx`);
       console.log("res", res);
       setLatestBlob(res);
 
@@ -135,9 +246,7 @@ function PPTGen() {
 
   // Handle form submission for generating PPT
   const handleGeneratePPT = () => {
-    // setPptData(pptContent); // Replace with actual logic to generate PPT
-    // onClick = { generateAndUploadPPT };
-    generateAndUploadPPT()
+    generateAndUploadPPT();
   };
 
   return (
@@ -175,11 +284,87 @@ function PPTGen() {
           {/* Conditional Rendering based on selected view */}
           {view === "generate" && (
             <div>
+              <div className="flex space-x-4 bg-gray-100 p-4 rounded-lg mb-2">
+                {tabs.map((tab) => (
+                  <div
+                    key={tab.value}
+                    onClick={() => setSlideMode(tab.value)}
+                    className={`cursor-pointer px-4 py-2 rounded ${
+                      slideMode === tab.value
+                        ? "bg-blue-500 text-white font-semibold"
+                        : "bg-white text-gray-700 hover:bg-gray-200"
+                    }`}
+                  >
+                    {tab.label}
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-col items-start space-y-2  bg-gray-100 rounded-lg shadow-md w-full mb-2">
+                <label
+                  htmlFor="slideName"
+                  className="text-sm font-semibold text-gray-700"
+                >
+                  Enter Slide Name:
+                </label>
+                <input
+                  type="text"
+                  id="slideName"
+                  value={slideName}
+                  onChange={handleInputChange}
+                  placeholder="Type slide name here..."
+                  className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              {slideMode !== "image" ? (
+                <div>
+                  <label
+                    htmlFor="slideName"
+                    className="text-sm font-semibold text-gray-700"
+                  >
+                    {`Enter PPT ${slideMode.toUpperCase()} Content here`}
+                  </label>
+                  <textarea
+                    placeholder="Enter PPT Gen syntax here"
+                    value={JSON.stringify(pptContent)}
+                    onChange={(e) => setPptContent(JSON.parse(e.target.value))}
+                    className="w-full h-[30vh] p-2 mb-4 border border-gray-300 rounded mb-2"
+                  />
+                </div>
+              ) : (
+                <div>
+                  <label
+                    htmlFor="slideName"
+                    className="text-sm font-semibold text-gray-700"
+                  >
+                    Enter Image URL:
+                  </label>
+                  <div className="flex gap-2 items-center mb-2">
+                    <input
+                      type="text"
+                      id="imageURL"
+                      value={imageURL}
+                      onChange={(e) => {
+                        setImageURL(e.target.value);
+                      }}
+                      placeholder="Paste Image path"
+                      className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2  focus:ring-blue-500"
+                    />
+                    <img src={imageURL} className="w-10 h-10 rounded-md" />
+                  </div>
+                </div>
+              )}
+              <label
+                htmlFor="slideName"
+                className="text-sm font-semibold text-gray-700"
+              >
+                {`Enter PPT ${slideMode.toUpperCase()} options here`}
+              </label>
               <textarea
-                placeholder="Enter PPT Gen syntax here"
-                value={pptContent}
-                onChange={(e) => setPptContent(e.target.value)}
-                className="w-full h-40 p-2 mb-4 border border-gray-300 rounded"
+                placeholder="Enter PPT Gen Options here"
+                value={JSON.stringify(pptOptions)}
+                onChange={(e) => setPptOptions(JSON.parse(e.target.value))}
+                className="w-full h-[20vh] p-2 mb-4 border border-gray-300 rounded"
               />
               <button
                 onClick={handleGeneratePPT}
@@ -220,7 +405,7 @@ function PPTGen() {
 
         {/* Right Side: PPT Viewer */}
         <div className="w-2/3 p-6 bg-gray-50">
-          {latestBlob ? (
+          {latestBlob && view !== "generate" ? (
             <div style={{ marginTop: "20px", padding: "10px", width: "100%" }}>
               <DocumentViewer
                 style={{ height: "60vh", width: "100%" }}
@@ -232,7 +417,11 @@ function PPTGen() {
               />
             </div> // Replace with actual rendering logic for PPT
           ) : (
-            <p className="text-gray-500">No PPT content generated yet.</p>
+            <p className="text-gray-500">
+              {view == "generate"
+                ? "No Preview in edit mode"
+                : "No PPT content generated yet."}
+            </p>
           )}
         </div>
       </div>
