@@ -407,7 +407,7 @@ function PPTGen() {
                       typeof inputValue === "object"
                         ? JSON.parse(inputValue)
                         : inputValue; // Try to parse the JSON string
-                    setPptContent(pptOptions); // Update pptContent if parsing is successful
+                    setPptOptions(parsedContent); // Update pptContent if parsing is successful
                   } catch (error) {
                     console.error("Invalid JSON format", error);
                     // Optionally, show a warning message to the user about invalid JSON
