@@ -589,7 +589,7 @@ function PPTGen() {
             This is just a (POC) Proof of concept: A process to demonstrate the
             feasibility of a product,
           </marquee>
-          {lastSlides.length > 1 && (
+          {lastSlides.length > 1 ?(
             <>
               Reorder Slides
               <div className="flex overflow-x-auto p-1 border-dashed border-2 mt-1">
@@ -639,7 +639,7 @@ function PPTGen() {
                 </Draggable>
               </div>
             </>
-          )}
+          ): <>You can reorder slides after adding two slides </>}
           {latestBlob ? (
             <div style={{ marginTop: "20px", padding: "10px", width: "100%" }}>
               <DocumentViewer
