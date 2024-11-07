@@ -40,8 +40,8 @@ function PPTGen() {
     { label: "Area", value: "area" },
     { label: "Bar", value: "bar" },
     { label: "Bar 3D", value: "bar3d" },
-    { label: "Bubble", value: "bubble" },
-    { label: "Bubble 3D", value: "bubble3d" },
+    // { label: "Bubble", value: "bubble" },
+    // { label: "Bubble 3D", value: "bubble3d" },
     { label: "Doughnut", value: "doughnut" },
     { label: "Line", value: "line" },
     { label: "Pie", value: "pie" },
@@ -219,7 +219,26 @@ function PPTGen() {
     console.log("lastSlides", prevSlidesData);
     console.log("lastSlides length", prevSlidesData.length);
   
-    prevSlidesData.forEach((slideData) => {
+
+    const newSlideData = {
+      order: prevSlidesData.length,
+      name: slideName,
+      pptContent:pptContent,
+      pptOptions: pptOptions,
+      type:slideMode,
+      path:imageURL,
+      chartType:selectedChartType
+
+    };
+
+    console.log('old prevSlidesData',prevSlidesData)
+    const newArr=reordered ?prevSlidesData : [...prevSlidesData,newSlideData]
+    console.log('new prevSlidesData',newArr)
+
+    setLastSlides(newArr)
+
+
+    newArr.forEach((slideData) => {
       let slide = pptx.addSlide();
   
       // Set background color and add content based on type
@@ -248,58 +267,61 @@ function PPTGen() {
     });
   
     // Handle addition of new slide only if `reordered` is false
-    if (!reordered) {
-      let slide;
-      const newSlideData = {
-        order: prevSlidesData.length,
-        name: slideName,
-      };
+    // if (!reordered) {
+    //   let slide;
+    //   const newSlideData = {
+    //     order: prevSlidesData.length,
+    //     name: slideName,
+    //     pptContent:pptContent,
+    //     pptOptions: pptOptions,
+    //     type:slideMode,
+    //   };
   
-      // Add new slide based on `slideMode`
-      if (slideMode === "text") {
-        slide = pptx.addSlide();
-        slide.background = { color: "E0F7FA" };
-        newSlideData.type = "text";
-        newSlideData.pptContent = pptContent;
-        newSlideData.pptOptions = pptOptions;
-        slide.addText(pptContent, pptOptions);
-      } else if (slideMode === "image") {
-        slide = pptx.addSlide();
-        slide.background = { color: "FFF9C4" };
-        newSlideData.type = "image";
-        newSlideData.path = imageURL;
-        newSlideData.pptOptions = pptOptions;
-        slide.addImage({
-          path: imageURL,
-          ...pptOptions,
-        });
-      } else if (slideMode === "chart") {
-        slide = pptx.addSlide();
-        slide.background = { color: "E1F5FE" };
-        newSlideData.type = "chart";
-        newSlideData.pptContent = pptContent;
-        newSlideData.pptOptions = pptOptions;
-        newSlideData.chartType = selectedChartType; // Use the selected chart type here
-        slide.addChart(
-          pptx.ChartType[selectedChartType],
-          pptContent,
-          pptOptions
-        );
-      } else if (slideMode === "table") {
-        slide = pptx.addSlide();
-        slide.background = { color: "FCE4EC" };
-        newSlideData.type = "table";
-        newSlideData.pptContent = pptContent;
-        newSlideData.pptOptions = pptOptions;
-        slide.addTable(pptContent, pptOptions);
-      }
+    //   // Add new slide based on `slideMode`
+    //   if (slideMode === "text") {
+    //     slide = pptx.addSlide();
+    //     slide.background = { color: "E0F7FA" };
+    //     newSlideData.type = "text";
+    //     newSlideData.pptContent = pptContent;
+    //     newSlideData.pptOptions = pptOptions;
+    //     slide.addText(pptContent, pptOptions);
+    //   } else if (slideMode === "image") {
+    //     slide = pptx.addSlide();
+    //     slide.background = { color: "FFF9C4" };
+    //     newSlideData.type = "image";
+    //     newSlideData.path = imageURL;
+    //     newSlideData.pptOptions = pptOptions;
+    //     slide.addImage({
+    //       path: imageURL,
+    //       ...pptOptions,
+    //     });
+    //   } else if (slideMode === "chart") {
+    //     slide = pptx.addSlide();
+    //     slide.background = { color: "E1F5FE" };
+    //     newSlideData.type = "chart";
+    //     newSlideData.pptContent = pptContent;
+    //     newSlideData.pptOptions = pptOptions;
+    //     newSlideData.chartType = selectedChartType; // Use the selected chart type here
+    //     slide.addChart(
+    //       pptx.ChartType[selectedChartType],
+    //       pptContent,
+    //       pptOptions
+    //     );
+    //   } else if (slideMode === "table") {
+    //     slide = pptx.addSlide();
+    //     slide.background = { color: "FCE4EC" };
+    //     newSlideData.type = "table";
+    //     newSlideData.pptContent = pptContent;
+    //     newSlideData.pptOptions = pptOptions;
+    //     slide.addTable(pptContent, pptOptions);
+    //   }
   
-      // Add the new slide data to `lastSlides`
-      setLastSlides((prev) => {
-        const prevData = reordered ? [...prevSlidesData] : [...prev];
-        return [...prevData, newSlideData];
-      });
-    }
+    //   // Add the new slide data to `lastSlides`
+    //   setLastSlides((prev) => {
+    //     const prevData = reordered ? [...prevSlidesData] : [...prev];
+    //     return [...prevData, newSlideData];
+    //   });
+    // }
   
     // Convert PPT to Blob and upload
     pptx.write("base64").then(async (base64String) => {
@@ -615,6 +637,8 @@ function PPTGen() {
                   key={lastSlides.length}
                   onPosChange={(currentPos, newPos) => {
                     console.log(`Moved from ${currentPos} to ${newPos}`);
+                    if(newPos==currentPos)
+                    return
 
                     // Clone lastSlides to avoid mutating the original array directly
                     const reorderedSlides = [...lastSlides];
