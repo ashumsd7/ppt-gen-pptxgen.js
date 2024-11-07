@@ -39,7 +39,7 @@ function HoverButtonV2() {
           isOnButton=false
           // setIsExpanded(false);
         }}
-        className={`flex items-center justify-center w-12 h-12 p-2 rounded-full bg-blue-500 text-white transition-all duration-300 ${
+        className={`flex items-center justify-center w-12 h-12 p-2 rounded-full bg-yellow-500 text-black transition-all duration-300 ${
           isExpanded ? "w-36" : "w-12"
         }`}
       >

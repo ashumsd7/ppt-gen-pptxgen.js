@@ -5,6 +5,7 @@ import { BlobServiceClient } from "@azure/storage-blob";
 import { DocumentViewer } from "react-documents";
 import HoverButton from "./HoverButton";
 import HoverButtonV2 from "./HoverButtoonv2";
+import { Draggable } from "react-drag-reorder";
 
 // Tab data
 const tabs = [
@@ -15,7 +16,7 @@ const tabs = [
 ];
 function PPTGen() {
   // State for toggling between "Generate PPT" and "Show List"
-  const [view, setView] = useState("list");
+  const [view, setView] = useState("generate");
   const [blobList, setBlobList] = useState([]);
   const [slideMode, setSlideMode] = useState("text");
   const [slideName, setSlideName] = useState(
@@ -24,7 +25,11 @@ function PPTGen() {
   const [imageURL, setImageURL] = useState(
     "https://media.istockphoto.com/id/1241682184/photo/bird-on-top-of-a-stick.jpg?s=2048x2048&w=is&k=20&c=kFLLe-NPodHtMIlvHbtNMNXUfTJyddny_BMpGY9diFE="
   );
+  const [isChecked, setIsChecked] = useState(false);
 
+  const handleCheckboxChange = () => {
+    setIsChecked(!isChecked);
+  };
   const ppt_object = {
     text: {
       content: "Hey I am PPT Generator!",
@@ -115,12 +120,12 @@ function PPTGen() {
   }, [slideMode]);
 
   useEffect(() => {
-    setSlideName(`PPT-${slideMode}-${blobList.length + 1}`);
+    setSlideName(`PPT-SLIDE-${slideMode}-${blobList.length + 1}`);
   }, [slideMode]);
 
-  const handleInputChange = (e) => {
-    setSlideName(e.target.value);
-  };
+  // const handleInputChange = (e) => {
+  //   setSlideName(e.target.value);
+  // };
   const sasToken =
     "sv=2022-11-02&ss=bfqt&srt=sco&sp=rwdlacupiytfx&se=2025-06-04T13:26:22Z&st=2024-11-05T05:26:22Z&spr=https,http&sig=pAcLQDyT%2BRNtUABOSobtIhb%2FuSA43rbiU0btYf%2FVttw%3D";
   const containerName = `cmpptgencontainerv1`;
@@ -134,6 +139,7 @@ function PPTGen() {
   );
   const [pptContent, setPptContent] = useState("");
   const [pptOptions, setPptOptions] = useState("");
+  const [lastSlides, setLastSlides] = useState([]);
   const getBlobsInContainer = async (containerClient) => {
     const returnedBlobUrls = [];
     for await (const blob of containerClient.listBlobsFlat()) {
@@ -142,8 +148,14 @@ function PPTGen() {
         `https://${storageAccountName}.blob.core.windows.net/${containerName}/${blob.name}`
       );
     }
-    console.log("returnedBlobUrls", returnedBlobUrls);
-    setBlobList(returnedBlobUrls);
+    // console.log("returnedBlobUrls", returnedBlobUrls);
+
+    const filteredUrls = returnedBlobUrls.filter((url) => {
+      const lastSegment = url.split("/").pop();
+      return lastSegment.includes("Final");
+    });
+
+    setBlobList(filteredUrls);
     setSlideName(`PPT-${slideMode}-${returnedBlobUrls?.length + 1}`);
     return returnedBlobUrls;
   };
@@ -170,7 +182,7 @@ function PPTGen() {
       });
 
       alert("PPT uploaded successfully!");
-      setView("list");
+      // setView("list");
 
       const fileUrl = `https://${storageAccountName}.blob.core.windows.net/${containerName}/${fileName}`;
       console.log("File URL:", fileUrl);
@@ -180,47 +192,129 @@ function PPTGen() {
       alert("Error uploading file. Please try again.");
     }
   }
-
+  let pptx = new pptxgen();
   // Function to generate the PPT and upload to Azure Blob Storage
-  async function generateAndUploadPPT() {
+  async function generateAndUploadPPT(prevSlidesData = lastSlides, reordered) {
     // const pptContent = window.prompt("Enter content for the PPT:");
 
     // Create a new PowerPoint presentation
-    let pptx = new pptxgen();
-    let slide = pptx.addSlide();
 
     console.log("slideMode", slideMode);
     console.log("ppt", pptContent);
     console.log("pptOptions", pptOptions);
+    console.log("lastSlides", prevSlidesData);
+    // let slide = pptx.addSlide();
 
-    if (slideMode == "text") {
-      slide.background = { color: "E0F7FA" };
-      slide.addText(pptContent, pptOptions);
+    prevSlidesData.forEach((slideData) => {
+      let slide = pptx.addSlide();
+
+      // Set background color based on type
+      if (slideData.type === "text") {
+        slide.background = { color: "E0F7FA" };
+        slide.addText(slideData.pptContent, slideData.pptOptions);
+      } else if (slideData.type === "image") {
+        slide.background = { color: "FFF9C4" };
+        slide.addImage({
+          path: slideData.path,
+          ...slideData.pptOptions,
+        });
+      } else if (slideData.type === "chart") {
+        slide.background = { color: "E1F5FE" };
+        slide.addChart(
+          pptx.ChartType.pie,
+          slideData.pptContent,
+          slideData.pptOptions
+        );
+      } else if (slideData.type === "table") {
+        slide.background = { color: "FCE4EC" };
+        slide.addTable(slideData.pptContent, slideData.pptOptions);
+      }
+    });
+
+    if (!reordered) {
+      // last one
+      let slide = pptx.addSlide();
+      if (slideMode == "text") {
+        slide.background = { color: "E0F7FA" };
+
+        setLastSlides((prev) => {
+          const prevSlides = [
+            ...prevSlidesData,
+            {
+              type: "text",
+              pptContent,
+              pptOptions,
+              order: prevSlidesData.length,
+              name: slideName,
+            },
+          ];
+          return prevSlides;
+        });
+        slide.addText(pptContent, pptOptions);
+      }
+
+      if (slideMode == "image") {
+        slide.background = { color: "FFF9C4" };
+
+        setLastSlides((prev) => {
+          const prevSlides = [
+            ...prevSlidesData,
+            {
+              type: "image",
+              path: imageURL,
+              pptOptions,
+              order: prevSlidesData.length,
+              name: slideName,
+            },
+          ];
+          return prevSlides;
+        });
+        slide.addImage({
+          path: imageURL,
+          ...pptOptions,
+        });
+      }
+
+      if (slideMode == "chart") {
+        slide.background = { color: "E1F5FE" };
+        setLastSlides((prev) => {
+          const prevSlides = [
+            ...prevSlidesData,
+            {
+              type: "chart",
+              pptContent,
+              pptOptions,
+              order: prevSlidesData.length,
+              name: slideName,
+            },
+          ];
+          return prevSlides;
+        });
+        slide.addChart(pptx.ChartType.line, pptContent, pptOptions);
+      }
+
+      if (slideMode == "table") {
+        slide.background = { color: "FCE4EC" };
+        setLastSlides((prev) => {
+          const prevSlides = [
+            ...prevSlidesData,
+            {
+              type: "table",
+              pptContent,
+              pptOptions,
+              order: prevSlidesData.length,
+              name: slideName,
+            },
+          ];
+          return prevSlides;
+        });
+        slide.addTable(pptContent, pptOptions);
+      }
     }
-
-    if (slideMode == "image") {
-      slide.background = { color: "FFF9C4" };
-      slide.addImage({
-        path: imageURL,
-        ...pptOptions,
-      });
-    }
-
-    if (slideMode == "chart") {
-      slide.background = { color: "E1F5FE" };
-      slide.addChart(pptx.ChartType.line, pptContent, pptOptions);
-    }
-
-    if (slideMode == "table") {
-      slide.background = { color: "FCE4EC" };
-      slide.addTable(pptContent, pptOptions);
-    }
-
-    console.log("came hgere");
+    console.log("prevSlides", lastSlides);
+    // generateFinalPPT(pptx);
     // Generate the PPT file as a Blob
     pptx.write("base64").then(async (base64String) => {
-      console.log("base64String", base64String);
-      // Convert base64 to a Blob
       const byteCharacters = atob(base64String);
       const byteNumbers = new Array(byteCharacters.length);
       for (let i = 0; i < byteCharacters.length; i++) {
@@ -232,19 +326,36 @@ function PPTGen() {
       });
 
       // Upload the Blob to Azure Blob Storage
-      const res = await uploadFileToBlob2(pptBlob, `${slideName}.pptx`);
+      const res = await uploadFileToBlob2(
+        pptBlob,
+        `${
+          isChecked ? "Final-" : reordered ? "Reordered=" : ""
+        }${slideName}.pptx`
+      );
       console.log("res", res);
       setLatestBlob(res);
-
       console.log("File Uploaded");
       const blobService = new BlobServiceClient(
         `https://${storageAccountName}.blob.core.windows.net/?${sasToken}`
       );
       const containerClient = blobService.getContainerClient(containerName);
-
-      // get list of blobs in container
+      setIsChecked(false);
       return getBlobsInContainer(containerClient);
     });
+  }
+
+  function getTime() {
+    const now = new Date();
+    const formattedString =
+      `${now.getDate().toString().padStart(2, "0")}_` +
+      `${(now.getMonth() + 1).toString().padStart(2, "0")}_` +
+      `${now.getFullYear()}_` +
+      `${now.getHours().toString().padStart(2, "0")}_` +
+      `${now.getMinutes().toString().padStart(2, "0")}_` +
+      `${now.getSeconds().toString().padStart(2, "0")}`;
+
+    console.log(formattedString);
+    return formattedString;
   }
 
   useEffect(() => {
@@ -263,17 +374,19 @@ function PPTGen() {
   };
 
   return (
-    <>
+    <div className="relative">
       <div className="bg-gray-200 h-[78px] flex justify-start items-center">
         <h1 className="text-3xl px-4 font-bold py-2 w-[200px]">PPT GEN</h1>
       </div>
-      {/* <HoverButton/> */}
-      <HoverButtonV2/>
+      {/* <div className="flex flex-col gap-10 ml-10 absolute right-[50px] bottom-[10px]">
+        <HoverButton />
+        <HoverButtonV2 />
+      </div> */}
       <div className="flex h-[90vh] bg-gray-100">
         {/* Left Side: Navigation and Content Input */}
         <div className="w-1/3 p-6 border-r border-gray-300 bg-white">
           {/* Navbar */}
-          <nav className="mb-6 flex space-x-4 border-b pb-2">
+          {/* <nav className="mb-6 flex space-x-4 border-b pb-2">
             <span
               className={`cursor-pointer px-3 py-2 rounded transition ${
                 view === "generate"
@@ -282,7 +395,7 @@ function PPTGen() {
               }`}
               onClick={() => setView("generate")}
             >
-              Generate new PPT
+              Add Slides in PPT
             </span>
             <span
               className={`cursor-pointer px-3 py-2 rounded transition ${
@@ -294,7 +407,7 @@ function PPTGen() {
             >
               Show PPT List
             </span>
-          </nav>
+          </nav> */}
 
           {/* Conditional Rendering based on selected view */}
           {view === "generate" && (
@@ -314,13 +427,12 @@ function PPTGen() {
                   </div>
                 ))}
               </div>
-
-              <div className="flex flex-col items-start space-y-2  bg-gray-100 rounded-lg shadow-md w-full mb-2">
+              {/* <div className="flex flex-col items-start space-y-2  bg-gray-100 rounded-lg shadow-md w-full mb-2">
                 <label
                   htmlFor="slideName"
                   className="text-sm font-semibold text-gray-700"
                 >
-                  Enter Slide Name:
+                  Enter PPT Name:
                 </label>
                 <input
                   type="text"
@@ -330,9 +442,9 @@ function PPTGen() {
                   placeholder="Type slide name here..."
                   className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-              </div>
+              </div> */}
               {slideMode !== "image" ? (
-                <div>
+                <div className="hidden">
                   <label
                     htmlFor="slideName"
                     className="text-sm font-semibold text-gray-700"
@@ -340,6 +452,7 @@ function PPTGen() {
                     {`Enter PPT ${slideMode.toUpperCase()} Content here`}
                   </label>
                   <textarea
+                    disabled
                     placeholder="Enter PPT Gen syntax here"
                     value={
                       typeof pptContent === "object"
@@ -387,7 +500,7 @@ function PPTGen() {
                   </div>
                 </div>
               )}
-              <label
+              {/* <label
                 htmlFor="slideName"
                 className="text-sm font-semibold text-gray-700"
               >
@@ -416,12 +529,28 @@ function PPTGen() {
                   }
                 }}
                 className="w-full h-[20vh] p-2 mb-4 border border-gray-300 rounded"
-              />
+              /> */}
+              {/* <div className="flex items-center space-x-2 mb-2">
+                <input
+                  type="checkbox"
+                  checked={isChecked}
+                  onChange={handleCheckboxChange}
+                  className="form-checkbox h-5 w-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+                />
+                <label
+                  onClick={handleCheckboxChange}
+                  className={`text-sm font-medium cursor-pointer ${
+                    isChecked ? "text-blue-600" : "text-gray-700"
+                  }`}
+                >
+                  Mark as Final Slide
+                </label>
+              </div>{" "} */}
               <button
                 onClick={handleGeneratePPT}
                 className="px-4 py-2 bg-blue-500 text-white font-semibold rounded hover:bg-blue-600"
               >
-                Generate PPT
+                Add {slideMode.toLocaleLowerCase()} slide
               </button>
             </div>
           )}
@@ -460,7 +589,58 @@ function PPTGen() {
             This is just a (POC) Proof of concept: A process to demonstrate the
             feasibility of a product,
           </marquee>
-          {latestBlob && view !== "generate" ? (
+          {lastSlides.length > 1 && (
+            <>
+              Reorder Slides
+              <div className="flex overflow-x-auto p-1 border-dashed border-2 mt-1">
+                <Draggable
+                  key={lastSlides.length}
+                  onPosChange={(currentPos, newPos) => {
+                    console.log(`Moved from ${currentPos} to ${newPos}`);
+
+                    // Clone lastSlides to avoid mutating the original array directly
+                    const reorderedSlides = [...lastSlides];
+
+                    // Remove the slide at the current position
+                    const [movedSlide] = reorderedSlides.splice(currentPos, 1);
+
+                    // Insert the slide at the new position
+                    reorderedSlides.splice(newPos, 0, movedSlide);
+
+                    // Update the order for each slide based on the new arrangement
+                    const updatedSlides = reorderedSlides.map(
+                      (slide, index) => ({
+                        ...slide,
+                        order: index,
+                      })
+                    );
+                    console.log("updatedSlides", updatedSlides);
+
+                    // Update the state with the newly ordered slides
+                    setLastSlides(updatedSlides);
+                    generateAndUploadPPT(updatedSlides, true);
+                  }}
+                  dragItemStyling={{
+                    transition: "transform 0.3s ease",
+                    cursor: "grab",
+                  }}
+                >
+                  {lastSlides?.map((slide) => (
+                    <div
+                      key={slide.order}
+                      className="w-24 h-24 flex flex-col items-center mx-2 bg-gray-200 rounded-lg shadow-lg"
+                    >
+                      <div className="w-full h-20 bg-gray-400 rounded-t-lg flex justify-center items-center">
+                        <h1 className="text-2xl text-black">{slide.order}</h1>
+                      </div>
+                      <p className="mt-2 text-sm text-center">{slide.name}</p>
+                    </div>
+                  ))}
+                </Draggable>
+              </div>
+            </>
+          )}
+          {latestBlob ? (
             <div style={{ marginTop: "20px", padding: "10px", width: "100%" }}>
               <DocumentViewer
                 style={{ height: "60vh", width: "100%" }}
@@ -473,7 +653,8 @@ function PPTGen() {
             </div> // Replace with actual rendering logic for PPT
           ) : (
             <p className=" text-4xl text-orange-500 pt-10">
-              {view == "generate" ? (
+              {/* <>
+             {view == "generate" ? (
                 <>
                   <div> No Preview in edit mode</div>
 
@@ -481,17 +662,18 @@ function PPTGen() {
                     className={`cursor-pointer px-3 py-2 rounded transition border bg-gray-500 text-white text-sm `}
                     onClick={() => setView("list")}
                   >
-                  Show Preview Mode
+                    Show Preview Mode
                   </span>
                 </>
               ) : (
                 "No PPT content generated yet."
               )}
+             </> */}
             </p>
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
