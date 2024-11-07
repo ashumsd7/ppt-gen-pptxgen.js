@@ -457,8 +457,8 @@ function PPTGen() {
 
           {lastSlides.length > 0 ? (
             <section className="mt-10">
-              <h2 className="text-xl font-semibold text-gray-800 mb-1">
-                Reorder Slides {lastSlides.length}
+              <h2 className="text-xl font-semibold text-gray-800 mb-1 flex gap-2 items-center">
+                Reorder Slides <p className="font-light text-sm">({lastSlides.length})</p>
               </h2>
               {lastSlides.length <= 1 ? (
                 <p className="mb-1 text-gray-500 text-left">
@@ -466,7 +466,7 @@ function PPTGen() {
                 </p>
               ) : (
                 <p className="mb-1 text-gray-500 text-left">
-                  Now you can reorder
+                  Now you can drag and  reorder slides
                 </p>
               )}
               <div className="flex flex-wrap gap-4 p-4 border-dashed border-2 border-gray-300 rounded-lg bg-white shadow-sm">
