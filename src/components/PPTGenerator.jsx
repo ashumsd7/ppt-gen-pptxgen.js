@@ -536,7 +536,7 @@ function PPTGen() {
                           {slide.order}
                         </h1>
                       </div>
-                      <p className="text-center text-xs font-light truncate w-24 text-gray-700 mt-1">
+                      <p className="text-center text-xs px-1 font-light truncate w-24 text-gray-700 mt-1">
                         {slide.name}
                       </p>
                     </div>
