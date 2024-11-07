@@ -21,6 +21,7 @@ function PPTGen() {
   const [slideMode, setSlideMode] = useState("text");
   const [isControlEnabled, setIsControlEnabled] = useState(true);
   const [selectedChartType, setSelectedChartType] = useState("area");
+  const [isLoading, setIsLoading] = useState(false);
   const [slideName, setSlideName] = useState(
     `Slide_${
       slideMode === "chart" ? `${slideMode}_${selectedChartType}_` : slideMode
@@ -70,12 +71,12 @@ function PPTGen() {
   ];
   const ppt_object = {
     text: {
-      content: "Hey I am PPT Generator!",
+      content: "Hello How are you ?",
       options: {
-        x: 1,
-        y: 1,
+        x: 0,
+        y: 0,
         w: 10,
-        fontSize: 36,
+        fontSize: 16,
         fill: { color: "F1F1F1" },
         align: "center",
       },
@@ -228,6 +229,7 @@ function PPTGen() {
         slideMode === "chart" ? `${slideMode}_${selectedChartType}_` : slideMode
       }_${blobList.length + 1}`
     );
+    setIsLoading(false);
     return returnedBlobUrls;
   };
 
@@ -252,7 +254,7 @@ function PPTGen() {
         blobHTTPHeaders: { blobContentType: fileBlob.type },
       });
 
-      alert("PPT updated successfully!");
+      // alert("PPT updated successfully!");
       // setView("list");
 
       const fileUrl = `https://${storageAccountName}.blob.core.windows.net/${containerName}/${fileName}`;
@@ -272,16 +274,6 @@ function PPTGen() {
     console.log("lastSlides", prevSlidesData);
     console.log("lastSlides length", prevSlidesData.length);
 
-    // let pptx = new pptxgen();
-    // let slide = pptx.addSlide();
-    // let slide2 = pptx.addSlide();
-
-    // console.log(pptContent);
-    // console.log(pptOptions);
-
-    // slide.addChart(pptx.ChartType.pie, [...pptContent], { ...pptOptions });
-    // slide2.addChart(pptx.ChartType.bar, [...pptContent], { ...pptOptions });
-
     const newSlideData = {
       order: prevSlidesData.length,
       name: slideName,
@@ -296,9 +288,44 @@ function PPTGen() {
     const newArr = reordered
       ? prevSlidesData
       : [...prevSlidesData, newSlideData];
-    console.log("new prevSlidesData", newArr);
+    console.log("new prevSlidesData 123", newArr);
 
     setLastSlides(newArr);
+    let slide = pptx.addSlide();
+
+    // slide.addText("Title 1", {
+    //   x: 0.5, // Position 0.5 inches from the left
+    //   y: 0.5, // Position 0.5 inches from the top
+    //   fontSize: 36, // Large font size for title
+    //   bold: true, // Bold text for the title
+    //   color: "333333", // Dark color
+    // });
+
+    // // Define the bullet points text
+    // const bulletPoints = [
+    //   "Generate PowerPoint: As a user, I want to be able to upload content in DOCX, PDF, or plain text format, for the system to automatically generate PowerPoint slides based on the content I provide.",
+    //   "Generate PowerPoint: As a user, I want to be able to upload content in DOCX, PDF, or plain text format, for the system to automatically generate PowerPoint slides based on the content I provide.",
+    //   "Generate PowerPoint: As a user, I want to be able to upload content in DOCX, PDF, or plain text format, for the system to automatically generate PowerPoint slides based on the content I provide.",
+    // ];
+
+    // // Add the bullet points below the title
+    // slide.addText(
+    //   bulletPoints.map((point) => ({
+    //     text: point,
+    //     options: {
+    //       bullet: true,
+    //       fontSize: 18,
+    //       color: "333333",
+    //       lineSpacing: 20,
+    //     },
+    //   })),
+    //   {
+    //     x: 0.5, // Position 0.5 inches from the left
+    //     y: 2, // Position 2 inches from the top to leave space for title
+    //     w: 9, // Width of 9 inches to fill most of the slide width
+    //     fontFace: "Arial", // Font face for bullets
+    //   }
+    // );
 
     newArr.forEach((slideData) => {
       let slide = pptx.addSlide();
@@ -306,7 +333,7 @@ function PPTGen() {
       // Set background color and add content based on type
       if (slideData.type === "text") {
         slide.background = { color: "E0F7FA" };
-        slide.addText(slideData.pptContent, slideData.pptOptions);
+        slide.addText(slideData.pptContent, {...slideData.pptOptions});
       } else if (slideData.type === "image") {
         slide.background = { color: "FFF9C4" };
         slide.addImage({
@@ -329,6 +356,7 @@ function PPTGen() {
     });
 
     // Convert PPT to Blob and upload
+
     pptx.write("base64").then(async (base64String) => {
       const byteCharacters = atob(base64String);
       const byteNumbers = new Array(byteCharacters.length);
@@ -386,6 +414,7 @@ function PPTGen() {
 
   // Handle form submission for generating PPT
   const handleGeneratePPT = () => {
+    setIsLoading(true);
     generateAndUploadPPT();
   };
 
@@ -473,20 +502,30 @@ function PPTGen() {
             </div>
           )}
 
-          <button
-            onClick={handleGeneratePPT}
-            className="w-full px-4 py-2 mt-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-all duration-150 shadow-md"
-          >
-            Add {slideMode.toLowerCase()} Slide
-          </button>
+          {!isLoading ? (
+            <button
+              disabled={isLoading}
+              onClick={handleGeneratePPT}
+              className="w-full px-4 py-2 mt-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-all duration-150 shadow-md"
+            >
+              Add {slideMode.toLowerCase()} Slide
+            </button>
+          ) : (
+            <button
+              disabled={isLoading}
+              className="w-full px-4 py-2 mt-2 bg-gray-200 opacity-30 text-white font-semibold rounded-md hover:bg-blue-700 transition-all duration-150 shadow-md"
+            >
+              Please wait
+            </button>
+          )}
 
-          {lastSlides.length > 0 ? (
+          {lastSlides.length > 0 && !isLoading ? (
             <section className="mt-10">
               <h2 className="text-xl font-semibold text-gray-800 mb-1 flex gap-2 items-center">
                 Reorder Slides{" "}
                 <p className="font-light text-sm">({lastSlides.length})</p>
               </h2>
-              {lastSlides.length <= 1 ? (
+              {lastSlides.length <= 1  ? (
                 <p className="mb-1 text-gray-500 text-left">
                   Add at least two slides to enable reordering.
                 </p>
@@ -499,6 +538,8 @@ function PPTGen() {
                 <Draggable
                   key={lastSlides.length}
                   onPosChange={(currentPos, newPos) => {
+                    if(isLoading)
+                    return
                     console.log(`Moved from ${currentPos} to ${newPos}`);
                     if (newPos == currentPos) return;
 
