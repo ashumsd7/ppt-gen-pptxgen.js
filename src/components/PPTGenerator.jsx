@@ -268,6 +268,7 @@ function PPTGen() {
   let pptx = new pptxgen();
   // Function to generate the PPT and upload to Azure Blob Storage
   async function generateAndUploadPPT(prevSlidesData = lastSlides, reordered) {
+    setIsLoading(true);
     console.log("slideMode", slideMode);
     console.log("ppt", pptContent);
     console.log("pptOptions", pptOptions);
@@ -291,7 +292,7 @@ function PPTGen() {
     console.log("new prevSlidesData 123", newArr);
 
     setLastSlides(newArr);
-    let slide = pptx.addSlide();
+    // let slide = pptx.addSlide();
 
     // slide.addText("Title 1", {
     //   x: 0.5, // Position 0.5 inches from the left
@@ -519,7 +520,7 @@ function PPTGen() {
             </button>
           )}
 
-          {lastSlides.length > 0 && !isLoading ? (
+          {lastSlides.length > 0  ? (
             <section className="mt-10">
               <h2 className="text-xl font-semibold text-gray-800 mb-1 flex gap-2 items-center">
                 Reorder Slides{" "}
@@ -534,7 +535,7 @@ function PPTGen() {
                   Now you can drag and reorder slides
                 </p>
               )}
-              <div className="flex flex-wrap gap-4 p-4 border-dashed border-2 border-gray-300 rounded-lg bg-white shadow-sm">
+              <div className={`flex flex-wrap gap-4 p-4 border-dashed border-2 border-gray-300 rounded-lg bg-white shadow-sm ${isLoading && 'opacity-30'}`}>
                 <Draggable
                   key={lastSlides.length}
                   onPosChange={(currentPos, newPos) => {
