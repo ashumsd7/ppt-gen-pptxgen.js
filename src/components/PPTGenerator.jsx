@@ -26,10 +26,28 @@ function PPTGen() {
     "https://media.istockphoto.com/id/1241682184/photo/bird-on-top-of-a-stick.jpg?s=2048x2048&w=is&k=20&c=kFLLe-NPodHtMIlvHbtNMNXUfTJyddny_BMpGY9diFE="
   );
   const [isChecked, setIsChecked] = useState(false);
-
+  const [selectedChartType, setSelectedChartType] = useState("area");
   const handleCheckboxChange = () => {
     setIsChecked(!isChecked);
   };
+
+  const handleSelectionChange = (e) => {
+    setSelectedChartType(e.target.value);
+    console.log(`Selected chart type: ${e.target.value}`);
+  };
+
+  const chartOptions = [
+    { label: "Area", value: "area" },
+    { label: "Bar", value: "bar" },
+    { label: "Bar 3D", value: "bar3d" },
+    { label: "Bubble", value: "bubble" },
+    { label: "Bubble 3D", value: "bubble3d" },
+    { label: "Doughnut", value: "doughnut" },
+    { label: "Line", value: "line" },
+    { label: "Pie", value: "pie" },
+    { label: "Radar", value: "radar" },
+    { label: "Scatter", value: "scatter" },
+  ];
   const ppt_object = {
     text: {
       content: "Hey I am PPT Generator!",
@@ -150,12 +168,12 @@ function PPTGen() {
     }
     // console.log("returnedBlobUrls", returnedBlobUrls);
 
-    const filteredUrls = returnedBlobUrls.filter((url) => {
-      const lastSegment = url.split("/").pop();
-      return lastSegment.includes("Final");
-    });
+    // const filteredUrls = returnedBlobUrls.filter((url) => {
+    //   const lastSegment = url.split("/").pop();
+    //   return lastSegment.includes("Final");
+    // });
 
-    setBlobList(filteredUrls);
+    setBlobList(returnedBlobUrls);
     setSlideName(`PPT-${slideMode}-${returnedBlobUrls?.length + 1}`);
     return returnedBlobUrls;
   };
@@ -195,20 +213,16 @@ function PPTGen() {
   let pptx = new pptxgen();
   // Function to generate the PPT and upload to Azure Blob Storage
   async function generateAndUploadPPT(prevSlidesData = lastSlides, reordered) {
-    // const pptContent = window.prompt("Enter content for the PPT:");
-
-    // Create a new PowerPoint presentation
-
     console.log("slideMode", slideMode);
     console.log("ppt", pptContent);
     console.log("pptOptions", pptOptions);
     console.log("lastSlides", prevSlidesData);
-    // let slide = pptx.addSlide();
-
+    console.log("lastSlides length", prevSlidesData.length);
+  
     prevSlidesData.forEach((slideData) => {
       let slide = pptx.addSlide();
-
-      // Set background color based on type
+  
+      // Set background color and add content based on type
       if (slideData.type === "text") {
         slide.background = { color: "E0F7FA" };
         slide.addText(slideData.pptContent, slideData.pptOptions);
@@ -220,8 +234,10 @@ function PPTGen() {
         });
       } else if (slideData.type === "chart") {
         slide.background = { color: "E1F5FE" };
+        console.log("Adding existing chart type:", slideData.chartType);
+        // Use the stored `chartType` from `slideData`
         slide.addChart(
-          pptx.ChartType.pie,
+          pptx.ChartType[slideData.chartType],
           slideData.pptContent,
           slideData.pptOptions
         );
@@ -230,90 +246,62 @@ function PPTGen() {
         slide.addTable(slideData.pptContent, slideData.pptOptions);
       }
     });
-
+  
+    // Handle addition of new slide only if `reordered` is false
     if (!reordered) {
-      // last one
-      let slide = pptx.addSlide();
-      if (slideMode == "text") {
+      let slide;
+      const newSlideData = {
+        order: prevSlidesData.length,
+        name: slideName,
+      };
+  
+      // Add new slide based on `slideMode`
+      if (slideMode === "text") {
+        slide = pptx.addSlide();
         slide.background = { color: "E0F7FA" };
-
-        setLastSlides((prev) => {
-          const prevSlides = [
-            ...prevSlidesData,
-            {
-              type: "text",
-              pptContent,
-              pptOptions,
-              order: prevSlidesData.length,
-              name: slideName,
-            },
-          ];
-          return prevSlides;
-        });
+        newSlideData.type = "text";
+        newSlideData.pptContent = pptContent;
+        newSlideData.pptOptions = pptOptions;
         slide.addText(pptContent, pptOptions);
-      }
-
-      if (slideMode == "image") {
+      } else if (slideMode === "image") {
+        slide = pptx.addSlide();
         slide.background = { color: "FFF9C4" };
-
-        setLastSlides((prev) => {
-          const prevSlides = [
-            ...prevSlidesData,
-            {
-              type: "image",
-              path: imageURL,
-              pptOptions,
-              order: prevSlidesData.length,
-              name: slideName,
-            },
-          ];
-          return prevSlides;
-        });
+        newSlideData.type = "image";
+        newSlideData.path = imageURL;
+        newSlideData.pptOptions = pptOptions;
         slide.addImage({
           path: imageURL,
           ...pptOptions,
         });
-      }
-
-      if (slideMode == "chart") {
+      } else if (slideMode === "chart") {
+        slide = pptx.addSlide();
         slide.background = { color: "E1F5FE" };
-        setLastSlides((prev) => {
-          const prevSlides = [
-            ...prevSlidesData,
-            {
-              type: "chart",
-              pptContent,
-              pptOptions,
-              order: prevSlidesData.length,
-              name: slideName,
-            },
-          ];
-          return prevSlides;
-        });
-        slide.addChart(pptx.ChartType.line, pptContent, pptOptions);
-      }
-
-      if (slideMode == "table") {
+        newSlideData.type = "chart";
+        newSlideData.pptContent = pptContent;
+        newSlideData.pptOptions = pptOptions;
+        newSlideData.chartType = selectedChartType; // Use the selected chart type here
+        slide.addChart(
+          pptx.ChartType[selectedChartType],
+          pptContent,
+          pptOptions
+        );
+      } else if (slideMode === "table") {
+        slide = pptx.addSlide();
         slide.background = { color: "FCE4EC" };
-        setLastSlides((prev) => {
-          const prevSlides = [
-            ...prevSlidesData,
-            {
-              type: "table",
-              pptContent,
-              pptOptions,
-              order: prevSlidesData.length,
-              name: slideName,
-            },
-          ];
-          return prevSlides;
-        });
+        newSlideData.type = "table";
+        newSlideData.pptContent = pptContent;
+        newSlideData.pptOptions = pptOptions;
         slide.addTable(pptContent, pptOptions);
       }
+  
+      // Add the new slide data to `lastSlides`
+      setLastSlides((prev) => {
+        const prevData = reordered ? [...prevSlidesData] : [...prev];
+        return [...prevData, newSlideData];
+      });
     }
-    console.log("prevSlides", lastSlides);
-    // generateFinalPPT(pptx);
-    // Generate the PPT file as a Blob
+  
+    // Convert PPT to Blob and upload
     pptx.write("base64").then(async (base64String) => {
       const byteCharacters = atob(base64String);
       const byteNumbers = new Array(byteCharacters.length);
@@ -324,17 +312,16 @@ function PPTGen() {
       const pptBlob = new Blob([byteArray], {
         type: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
       });
-
+  
       // Upload the Blob to Azure Blob Storage
       const res = await uploadFileToBlob2(
         pptBlob,
-        `${
-          isChecked ? "Final-" : reordered ? "Reordered=" : ""
-        }${slideName}.pptx`
+        `${isChecked ? "Final-" : reordered ? "Reordered=" : ""}${slideName}.pptx`
       );
       console.log("res", res);
       setLatestBlob(res);
       console.log("File Uploaded");
+      
       const blobService = new BlobServiceClient(
         `https://${storageAccountName}.blob.core.windows.net/?${sasToken}`
       );
@@ -343,6 +330,7 @@ function PPTGen() {
       return getBlobsInContainer(containerClient);
     });
   }
+  
 
   function getTime() {
     const now = new Date();
@@ -357,6 +345,15 @@ function PPTGen() {
     console.log(formattedString);
     return formattedString;
   }
+
+  const handleAddChart = () => {
+    // slide.addChart(
+    //   pptx.ChartType[selectedChartType],
+    //   slideData.pptContent,
+    //   slideData.pptOptions
+    // );
+    console.log(`Added chart of type: ${selectedChartType}`);
+  };
 
   useEffect(() => {
     const blobService = new BlobServiceClient(
@@ -443,6 +440,27 @@ function PPTGen() {
                   className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div> */}
+
+              <>
+                {slideMode == "chart" && (
+                  <div className="flex flex-col items-start space-y-4 mb-2">
+                    <label className="text-gray-700 font-semibold">
+                      Select Chart Type {selectedChartType}
+                    </label>
+                    <select
+                      value={selectedChartType}
+                      onChange={handleSelectionChange}
+                      className="p-2 border border-gray-300 w-full rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {chartOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </>
               {slideMode !== "image" ? (
                 <div className="hidden">
                   <label
@@ -589,7 +607,7 @@ function PPTGen() {
             This is just a (POC) Proof of concept: A process to demonstrate the
             feasibility of a product,
           </marquee>
-          {lastSlides.length > 1 ?(
+          {lastSlides.length > 1 ? (
             <>
               Reorder Slides
               <div className="flex overflow-x-auto p-1 border-dashed border-2 mt-1">
@@ -639,7 +657,9 @@ function PPTGen() {
                 </Draggable>
               </div>
             </>
-          ): <>You can reorder slides after adding two slides </>}
+          ) : (
+            <>You can reorder slides after adding two slides </>
+          )}
           {latestBlob ? (
             <div style={{ marginTop: "20px", padding: "10px", width: "100%" }}>
               <DocumentViewer
