@@ -19,8 +19,10 @@ function PPTGen() {
   const [view, setView] = useState("generate");
   const [blobList, setBlobList] = useState([]);
   const [slideMode, setSlideMode] = useState("text");
+  const [isControlEnabled, setIsControlEnabled] = useState(true);
+  const [selectedChartType, setSelectedChartType] = useState("area");
   const [slideName, setSlideName] = useState(
-    `PPT-${slideMode}-${blobList.length + 1}`
+   `Slide_${slideMode === 'chart' ? `${slideMode}_${selectedChartType}_` : slideMode}_${blobList.length + 1}`
   );
   const [selectedTemplate, setSelectedTemplate] = useState({
     id: 0,
@@ -42,7 +44,7 @@ function PPTGen() {
     "https://media.istockphoto.com/id/1241682184/photo/bird-on-top-of-a-stick.jpg?s=2048x2048&w=is&k=20&c=kFLLe-NPodHtMIlvHbtNMNXUfTJyddny_BMpGY9diFE="
   );
   const [isChecked, setIsChecked] = useState(false);
-  const [selectedChartType, setSelectedChartType] = useState("area");
+
   const handleCheckboxChange = () => {
     setIsChecked(!isChecked);
   };
@@ -154,8 +156,30 @@ function PPTGen() {
   }, [slideMode]);
 
   useEffect(() => {
-    setSlideName(`PPT-SLIDE-${slideMode}-${blobList.length + 1}`);
+    setSlideName(`Slide_${slideMode === 'chart' ? `${slideMode}_${selectedChartType}_` : slideMode}_${blobList.length + 1}`);
+
   }, [slideMode]);
+
+  const toggleControl = () => {
+    setIsControlEnabled((prev) => !prev);
+  };
+
+  useEffect(() => {
+    const controlElement = document.querySelector(".cui-toolbar-buttondock.alignright")
+    console.log("controlElement",controlElement);
+
+    if (controlElement) {
+      if (isControlEnabled) {
+        controlElement.setAttribute("aria-disabled", "false");
+        controlElement.style.opacity = "1";
+        controlElement.style.pointerEvents = "auto"; // Enable interactions
+      } else {
+        controlElement.setAttribute("aria-disabled", "true");
+        controlElement.style.opacity = "0.5";
+        controlElement.style.pointerEvents = "none"; // Disable interactions
+      }
+    }
+  }, [isControlEnabled]);
 
   const sasToken =
     "sv=2022-11-02&ss=bfqt&srt=sco&sp=rwdlacupiytfx&se=2025-06-04T13:26:22Z&st=2024-11-05T05:26:22Z&spr=https,http&sig=pAcLQDyT%2BRNtUABOSobtIhb%2FuSA43rbiU0btYf%2FVttw%3D";
@@ -178,7 +202,7 @@ function PPTGen() {
     }
 
     setBlobList(returnedBlobUrls);
-    setSlideName(`PPT-${slideMode}-${returnedBlobUrls?.length + 1}`);
+    setSlideName(`Slide_${slideMode === 'chart' ? `${slideMode}_${selectedChartType}_` : slideMode}_${blobList.length + 1}`);
     return returnedBlobUrls;
   };
 
@@ -203,7 +227,7 @@ function PPTGen() {
         blobHTTPHeaders: { blobContentType: fileBlob.type },
       });
 
-      alert("PPT uploaded successfully!");
+      alert("PPT updated successfully!");
       // setView("list");
 
       const fileUrl = `https://${storageAccountName}.blob.core.windows.net/${containerName}/${fileName}`;
@@ -440,12 +464,14 @@ function PPTGen() {
                 <p className="mb-1 text-gray-500 text-left">
                   Add at least two slides to enable reordering.
                 </p>
-              ):  <p className="mb-1 text-gray-500 text-left">
-                 Now you can reorder
-                </p>}
+              ) : (
+                <p className="mb-1 text-gray-500 text-left">
+                  Now you can reorder
+                </p>
+              )}
               <div className="flex flex-wrap gap-4 p-4 border-dashed border-2 border-gray-300 rounded-lg bg-white shadow-sm">
                 <Draggable
-                key={lastSlides.length}
+                  key={lastSlides.length}
                   onPosChange={(currentPos, newPos) => {
                     console.log(`Moved from ${currentPos} to ${newPos}`);
                     if (newPos == currentPos) return;
@@ -484,7 +510,7 @@ function PPTGen() {
                           {slide.order}
                         </h1>
                       </div>
-                      <p className="text-center text-sm text-gray-700 mt-1">
+                      <p className="text-center text-xs font-light truncate w-24 text-gray-700 mt-1">
                         {slide.name}
                       </p>
                     </div>
@@ -505,6 +531,11 @@ function PPTGen() {
               the product.
             </p>
           </div>
+          <div>
+      {/* <button onClick={toggleControl}>
+        {isControlEnabled ? "Disable Control" : "Enable Control"}
+      </button> */}
+    </div>
 
           {latestBlob ? (
             <div className="mt-8 bg-white rounded-lg shadow-md p-6">
