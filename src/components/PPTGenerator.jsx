@@ -22,7 +22,9 @@ function PPTGen() {
   const [isControlEnabled, setIsControlEnabled] = useState(true);
   const [selectedChartType, setSelectedChartType] = useState("area");
   const [slideName, setSlideName] = useState(
-   `Slide_${slideMode === 'chart' ? `${slideMode}_${selectedChartType}_` : slideMode}_${blobList.length + 1}`
+    `Slide_${
+      slideMode === "chart" ? `${slideMode}_${selectedChartType}_` : slideMode
+    }_${blobList.length + 1}`
   );
   const [selectedTemplate, setSelectedTemplate] = useState({
     id: 0,
@@ -144,8 +146,22 @@ function PPTGen() {
           },
           { text: "Top Rgt", options: { align: "right", fontFace: "Courier" } },
         ],
+        [
+          { text: "Mid Lft", options: { align: "left", fontFace: "Arial" } },
+          {
+            text: "Mid Ctr",
+            options: { align: "center", fontFace: "Verdana" },
+          },
+          { text: "Mid Rgt", options: { align: "right", fontFace: "Courier" } },
+        ],
       ],
-      options: { w: 9, rowH: 1, align: "left", fontFace: "Arial" },
+      options: {
+        w: 9,
+        rowH: 1,
+        align: "left",
+        fontFace: "Arial",
+        border: { pt: 1, color: "000000" }, // Apply border to all cells
+      },
     },
   };
 
@@ -156,8 +172,11 @@ function PPTGen() {
   }, [slideMode]);
 
   useEffect(() => {
-    setSlideName(`Slide_${slideMode === 'chart' ? `${slideMode}_${selectedChartType}_` : slideMode}_${blobList.length + 1}`);
-
+    setSlideName(
+      `Slide_${
+        slideMode === "chart" ? `${slideMode}_${selectedChartType}_` : slideMode
+      }_${blobList.length + 1}`
+    );
   }, [slideMode]);
 
   const toggleControl = () => {
@@ -165,8 +184,10 @@ function PPTGen() {
   };
 
   useEffect(() => {
-    const controlElement = document.querySelector(".cui-toolbar-buttondock.alignright")
-    console.log("controlElement",controlElement);
+    const controlElement = document.querySelector(
+      ".cui-toolbar-buttondock.alignright"
+    );
+    console.log("controlElement", controlElement);
 
     if (controlElement) {
       if (isControlEnabled) {
@@ -202,7 +223,11 @@ function PPTGen() {
     }
 
     setBlobList(returnedBlobUrls);
-    setSlideName(`Slide_${slideMode === 'chart' ? `${slideMode}_${selectedChartType}_` : slideMode}_${blobList.length + 1}`);
+    setSlideName(
+      `Slide_${
+        slideMode === "chart" ? `${slideMode}_${selectedChartType}_` : slideMode
+      }_${blobList.length + 1}`
+    );
     return returnedBlobUrls;
   };
 
@@ -458,7 +483,8 @@ function PPTGen() {
           {lastSlides.length > 0 ? (
             <section className="mt-10">
               <h2 className="text-xl font-semibold text-gray-800 mb-1 flex gap-2 items-center">
-                Reorder Slides <p className="font-light text-sm">({lastSlides.length})</p>
+                Reorder Slides{" "}
+                <p className="font-light text-sm">({lastSlides.length})</p>
               </h2>
               {lastSlides.length <= 1 ? (
                 <p className="mb-1 text-gray-500 text-left">
@@ -466,7 +492,7 @@ function PPTGen() {
                 </p>
               ) : (
                 <p className="mb-1 text-gray-500 text-left">
-                  Now you can drag and  reorder slides
+                  Now you can drag and reorder slides
                 </p>
               )}
               <div className="flex flex-wrap gap-4 p-4 border-dashed border-2 border-gray-300 rounded-lg bg-white shadow-sm">
@@ -532,10 +558,10 @@ function PPTGen() {
             </p>
           </div>
           <div>
-      {/* <button onClick={toggleControl}>
+            {/* <button onClick={toggleControl}>
         {isControlEnabled ? "Disable Control" : "Enable Control"}
       </button> */}
-    </div>
+          </div>
 
           {latestBlob ? (
             <div className="mt-8 bg-white rounded-lg shadow-md p-6">
