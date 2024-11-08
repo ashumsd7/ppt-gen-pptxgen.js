@@ -334,7 +334,7 @@ function PPTGen() {
       // Set background color and add content based on type
       if (slideData.type === "text") {
         slide.background = { color: "E0F7FA" };
-        slide.addText(slideData.pptContent, {...slideData.pptOptions});
+        slide.addText(slideData.pptContent, { ...slideData.pptOptions });
       } else if (slideData.type === "image") {
         slide.background = { color: "FFF9C4" };
         slide.addImage({
@@ -417,6 +417,38 @@ function PPTGen() {
   const handleGeneratePPT = () => {
     setIsLoading(true);
     generateAndUploadPPT();
+  };
+  const handleRemove = (slideOrder) => {
+    // Clone the current slides array
+    const reorderedSlides = [...lastSlides];
+    if(reorderedSlides.length==1){
+      alert('PPT has 1 slide cant be deleted')
+      return
+    }
+
+    // Find the index of the slide to be removed
+    const slideIndex = reorderedSlides.findIndex(
+      (slide) => slide.order === slideOrder
+    );
+
+    if (slideIndex !== -1) {
+      // Remove the slide at the identified index
+      reorderedSlides.splice(slideIndex, 1);
+
+      // Reorder the remaining slides and update their order properties
+      const updatedSlides = reorderedSlides.map((slide, index) => ({
+        ...slide,
+        order: index,
+      }));
+
+      console.log("updatedSlides after deletion", updatedSlides);
+
+      // Update the state with the newly ordered slides
+      setLastSlides(updatedSlides);
+
+      // Call generateAndUploadPPT with updated slides
+      generateAndUploadPPT(updatedSlides, true);
+    }
   };
 
   return (
@@ -520,13 +552,13 @@ function PPTGen() {
             </button>
           )}
 
-          {lastSlides.length > 0  ? (
+          {lastSlides.length > 0 ? (
             <section className="mt-10">
               <h2 className="text-xl font-semibold text-gray-800 mb-1 flex gap-2 items-center">
                 Reorder Slides{" "}
                 <p className="font-light text-sm">({lastSlides.length})</p>
               </h2>
-              {lastSlides.length <= 1  ? (
+              {lastSlides.length <= 1 ? (
                 <p className="mb-1 text-gray-500 text-left">
                   Add at least two slides to enable reordering.
                 </p>
@@ -535,25 +567,20 @@ function PPTGen() {
                   Now you can drag and reorder slides
                 </p>
               )}
-              <div className={`flex flex-wrap gap-4 p-4 border-dashed border-2 border-gray-300 rounded-lg bg-white shadow-sm ${isLoading && 'opacity-30'}`}>
+              <div
+                className={`flex flex-wrap gap-4 p-4 border-dashed border-2 border-gray-300 rounded-lg bg-white shadow-sm ${
+                  isLoading && "opacity-30"
+                }`}
+              >
                 <Draggable
                   key={lastSlides.length}
                   onPosChange={(currentPos, newPos) => {
-                    if(isLoading)
-                    return
+                    if (isLoading) return;
                     console.log(`Moved from ${currentPos} to ${newPos}`);
                     if (newPos == currentPos) return;
-
-                    // Clone lastSlides to avoid mutating the original array directly
                     const reorderedSlides = [...lastSlides];
-
-                    // Remove the slide at the current position
                     const [movedSlide] = reorderedSlides.splice(currentPos, 1);
-
-                    // Insert the slide at the new position
                     reorderedSlides.splice(newPos, 0, movedSlide);
-
-                    // Update the order for each slide based on the new arrangement
                     const updatedSlides = reorderedSlides.map(
                       (slide, index) => ({
                         ...slide,
@@ -571,8 +598,16 @@ function PPTGen() {
                   {lastSlides.map((slide, index) => (
                     <div
                       key={index}
-                      className="w-24 h-24 flex flex-col items-center bg-gray-200 rounded-lg shadow-lg transition-all duration-150"
+                      className="relative w-24 h-24 flex flex-col items-center bg-gray-200 rounded-lg shadow-lg transition-all duration-150"
                     >
+                      {/* Cross Button */}
+                      <button
+                        className="absolute top-1 right-1 w-5 h-5 flex items-center justify-center bg-red-500 text-white rounded-full hover:bg-red-600 focus:outline-none"
+                        onClick={() => handleRemove(slide.order)} // example handler for removing the item
+                      >
+                        ✕
+                      </button>
+
                       <div className="w-full h-20 bg-gray-300 rounded-t-lg flex items-center justify-center">
                         <h1 className="text-2xl font-bold text-black">
                           {slide.order}
