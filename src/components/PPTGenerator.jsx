@@ -425,7 +425,6 @@ function PPTGen() {
       alert('PPT has 1 slide cant be deleted')
       return
     }
-
     // Find the index of the slide to be removed
     const slideIndex = reorderedSlides.findIndex(
       (slide) => slide.order === slideOrder
@@ -434,18 +433,13 @@ function PPTGen() {
     if (slideIndex !== -1) {
       // Remove the slide at the identified index
       reorderedSlides.splice(slideIndex, 1);
-
-      // Reorder the remaining slides and update their order properties
       const updatedSlides = reorderedSlides.map((slide, index) => ({
         ...slide,
         order: index,
       }));
 
       console.log("updatedSlides after deletion", updatedSlides);
-
-      // Update the state with the newly ordered slides
       setLastSlides(updatedSlides);
-
       // Call generateAndUploadPPT with updated slides
       generateAndUploadPPT(updatedSlides, true);
     }
