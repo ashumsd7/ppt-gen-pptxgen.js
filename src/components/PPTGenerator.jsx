@@ -3,25 +3,66 @@ import React, { useEffect, useState } from "react";
 import pptxgen from "pptxgenjs";
 import { BlobServiceClient } from "@azure/storage-blob";
 import { DocumentViewer } from "react-documents";
-import HoverButton from "./HoverButton";
-import HoverButtonV2 from "./HoverButtoonv2";
-import { Draggable } from "react-drag-reorder";
+
+import Uppy from "@uppy/core";
+import "@uppy/core/dist/style.css";
+import "@uppy/dashboard/dist/style.css";
+import PdfTextExtractor from "./PPT/PDFtextExtractor";
+import DocTextExtractor from "./PPT/DocTextExtractor";
+import {
+  generateTextAndTableSlideV1,
+  generateTextAndTableSlideV10,
+  generateTextAndTableSlideV11,
+  generateTextAndTableSlideV2,
+  generateTextAndTableSlideV3,
+  generateTextAndTableSlideV4,
+  generateTextAndTableSlideV5,
+  generateTextAndTableSlideV6,
+  generateTextAndTableSlideV7,
+  generateTextAndTableSlideV8,
+  generateTextAndTableSlideV9,
+} from "../utils/helper";
+import SlideControls from "./PPT/SlideControls";
+import SlideControlsTest from "./PPT/SlideControlsTest";
+import {
+  DEFAULT_CHART_OBJECT,
+  DEFAULT_IMAGE_OBJECT,
+  DEFAULT_TABLE_OBJECT,
+  DEFAULT_TEXT_OBJECT,
+  defaultSlideData,
+} from "../data";
+import { layouts, templates } from "../data/constant";
+
+ 
+import SlidePagination from "./PPT/SlidePagination";
 
 // Tab data
-const tabs = [
-  { label: "Text", value: "text" },
-  { label: "Image", value: "image" },
-  { label: "Chart", value: "chart" },
-  { label: "Table", value: "table" },
-];
-function PPTGen() {
+
+function PPTGenerator() {
   // State for toggling between "Generate PPT" and "Show List"
-  const [view, setView] = useState("generate");
+  const [pdfText, setPdfText] = useState("");
   const [blobList, setBlobList] = useState([]);
+  const [latestSlides, setLatestSlides] = useState([]);
   const [slideMode, setSlideMode] = useState("text");
-  const [isControlEnabled, setIsControlEnabled] = useState(true);
+  const [layout, setLayout] = useState({ label: " V1", value: "v1" });
+  const [pptName, setPptName] = useState(
+    "United_" + Math.ceil(Math.random() * 100)
+  );
+
+  const [textView, setTextView] = useState(true);
+  const [isGenerated, setIsGenerated] = useState(false);
   const [selectedChartType, setSelectedChartType] = useState("area");
   const [isLoading, setIsLoading] = useState(false);
+  const ALLOWED_FILES = [
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ];
+
+  // 20Nov
+  const [slidesConfig, setSlidesConfig] = useState([]);
+  const [activeSlide, setActiveSlide] = useState(1);
+
   const [slideName, setSlideName] = useState(
     `Slide_${
       slideMode === "chart" ? `${slideMode}_${selectedChartType}_` : slideMode
@@ -32,176 +73,19 @@ function PPTGen() {
     name: "Blank Template",
   });
 
-  const templates = [
-    { id: 0, name: "Blank Template" }, // Default template
-    { id: 1, name: "Template 1" },
-    { id: 2, name: "Template 2" },
-    { id: 3, name: "Template 3" },
-    { id: 4, name: "Template 4" },
-  ];
-
   const handleSelectTemplate = (template) => {
     setSelectedTemplate(template);
-  };
-  const [imageURL, setImageURL] = useState(
-    "https://media.istockphoto.com/id/1241682184/photo/bird-on-top-of-a-stick.jpg?s=2048x2048&w=is&k=20&c=kFLLe-NPodHtMIlvHbtNMNXUfTJyddny_BMpGY9diFE="
-  );
-  const [isChecked, setIsChecked] = useState(false);
-
-  const handleCheckboxChange = () => {
-    setIsChecked(!isChecked);
+    localStorage.setItem("PPT_BG", template.bgColor.split("#")[1]);
   };
 
-  const handleSelectionChange = (e) => {
-    setSelectedChartType(e.target.value);
-    console.log(`Selected chart type: ${e.target.value}`);
-  };
-
-  const chartOptions = [
-    { label: "Area", value: "area" },
-    { label: "Bar", value: "bar" },
-    { label: "Bar 3D", value: "bar3d" },
-    // { label: "Bubble", value: "bubble" },
-    // { label: "Bubble 3D", value: "bubble3d" },
-    { label: "Doughnut", value: "doughnut" },
-    { label: "Line", value: "line" },
-    { label: "Pie", value: "pie" },
-    { label: "Radar", value: "radar" },
-    { label: "Scatter", value: "scatter" },
-  ];
-  const ppt_object = {
-    text: {
-      content: "Hello How are you ?",
-      options: {
-        x: 0,
-        y: 0,
-        w: 10,
-        fontSize: 16,
-        fill: { color: "F1F1F1" },
-        align: "center",
-      },
+  // Init Uppy instance
+  const uppy = new Uppy({
+    restrictions: {
+      maxNumberOfFiles: 1,
+      allowedFileTypes: ALLOWED_FILES,
     },
-    image: {
-      content: imageURL,
-      options: {
-        x: 1,
-        y: 2,
-        w: 3,
-        h: 2,
-      },
-    },
-    chart: {
-      content: [
-        {
-          name: "Actual Sales",
-          labels: [
-            "Jan",
-            "Feb",
-            "Mar",
-            "Apr",
-            "May",
-            "Jun",
-            "Jul",
-            "Aug",
-            "Sep",
-            "Oct",
-            "Nov",
-            "Dec",
-          ],
-          values: [
-            1500, 4600, 5156, 3167, 8510, 8009, 6006, 7855, 12102, 12789, 10123,
-            15121,
-          ],
-        },
-        {
-          name: "Projected Sales",
-          labels: [
-            "Jan",
-            "Feb",
-            "Mar",
-            "Apr",
-            "May",
-            "Jun",
-            "Jul",
-            "Aug",
-            "Sep",
-            "Oct",
-            "Nov",
-            "Dec",
-          ],
-          values: [
-            1000, 2600, 3456, 4567, 5010, 6009, 7006, 8855, 9102, 10789, 11123,
-            12121,
-          ],
-        },
-      ],
-      options: { x: 1, y: 1, w: 8, h: 4 },
-    },
-    table: {
-      content: [
-        [
-          { text: "Top Lft", options: { align: "left", fontFace: "Arial" } },
-          {
-            text: "Top Ctr",
-            options: { align: "center", fontFace: "Verdana" },
-          },
-          { text: "Top Rgt", options: { align: "right", fontFace: "Courier" } },
-        ],
-        [
-          { text: "Mid Lft", options: { align: "left", fontFace: "Arial" } },
-          {
-            text: "Mid Ctr",
-            options: { align: "center", fontFace: "Verdana" },
-          },
-          { text: "Mid Rgt", options: { align: "right", fontFace: "Courier" } },
-        ],
-      ],
-      options: {
-        w: 9,
-        rowH: 1,
-        align: "left",
-        fontFace: "Arial",
-        border: { pt: 1, color: "000000" }, // Apply border to all cells
-      },
-    },
-  };
-
-  useEffect(() => {
-    console.log(ppt_object[slideMode]);
-    setPptContent(ppt_object[slideMode].content);
-    setPptOptions(ppt_object[slideMode].options);
-  }, [slideMode]);
-
-  useEffect(() => {
-    setSlideName(
-      `Slide_${
-        slideMode === "chart" ? `${slideMode}_${selectedChartType}_` : slideMode
-      }_${blobList.length + 1}`
-    );
-  }, [slideMode]);
-
-  const toggleControl = () => {
-    setIsControlEnabled((prev) => !prev);
-  };
-
-  useEffect(() => {
-    const controlElement = document.querySelector(
-      ".cui-toolbar-buttondock.alignright"
-    );
-    console.log("controlElement", controlElement);
-
-    if (controlElement) {
-      if (isControlEnabled) {
-        controlElement.setAttribute("aria-disabled", "false");
-        controlElement.style.opacity = "1";
-        controlElement.style.pointerEvents = "auto"; // Enable interactions
-      } else {
-        controlElement.setAttribute("aria-disabled", "true");
-        controlElement.style.opacity = "0.5";
-        controlElement.style.pointerEvents = "none"; // Disable interactions
-      }
-    }
-  }, [isControlEnabled]);
+    autoProceed: true,
+  });
 
   const sasToken =
     "sv=2022-11-02&ss=bfqt&srt=sco&sp=rwdlacupiytfx&se=2025-06-04T13:26:22Z&st=2024-11-05T05:26:22Z&spr=https,http&sig=pAcLQDyT%2BRNtUABOSobtIhb%2FuSA43rbiU0btYf%2FVttw%3D";
@@ -211,9 +95,17 @@ function PPTGen() {
   const [latestBlob, setLatestBlob] = useState(
     "https://testingfeatures.blob.core.windows.net/test/POC%20(1).pptx?sp=r&st=2024-10-25T06:18:48Z&se=2024-11-25T14:18:48Z&spr=https&sv=2022-11-02&sr=b&sig=NtLNYZO3tUTV9IhjnKJIKv2d7ePXcEHnQd%2F02IXvQlg%3D"
   );
-  const [pptContent, setPptContent] = useState("");
-  const [pptOptions, setPptOptions] = useState("");
+
   const [lastSlides, setLastSlides] = useState([]);
+
+  useEffect(() => {
+    setSlideName(
+      `Slide_${
+        slideMode === "chart" ? `${slideMode}_${selectedChartType}_` : slideMode
+      }_${blobList.length + 1}`
+    );
+  }, [slideMode]);
+
   const getBlobsInContainer = async (containerClient) => {
     const returnedBlobUrls = [];
     for await (const blob of containerClient.listBlobsFlat()) {
@@ -234,8 +126,6 @@ function PPTGen() {
   };
 
   async function uploadFileToBlob2(fileBlob, fileName) {
-    console.log("file name 12", fileName);
-
     try {
       // Create a BlobServiceClient
       const blobServiceClient = new BlobServiceClient(
@@ -254,9 +144,6 @@ function PPTGen() {
         blobHTTPHeaders: { blobContentType: fileBlob.type },
       });
 
-      // alert("PPT updated successfully!");
-      // setView("list");
-
       const fileUrl = `https://${storageAccountName}.blob.core.windows.net/${containerName}/${fileName}`;
       console.log("File URL:", fileUrl);
       return fileUrl;
@@ -266,97 +153,365 @@ function PPTGen() {
     }
   }
   let pptx = new pptxgen();
-  // Function to generate the PPT and upload to Azure Blob Storage
-  async function generateAndUploadPPT(prevSlidesData = lastSlides, reordered) {
-    setIsLoading(true);
-    console.log("slideMode", slideMode);
-    console.log("ppt", pptContent);
-    console.log("pptOptions", pptOptions);
-    console.log("lastSlides", prevSlidesData);
-    console.log("lastSlides length", prevSlidesData.length);
 
-    const newSlideData = {
-      order: prevSlidesData.length,
-      name: slideName,
-      pptContent: pptContent,
-      pptOptions: pptOptions,
-      type: slideMode,
-      path: imageURL,
-      chartType: selectedChartType,
+  const getCurrentStatusOfPPT = () => {
+    console.log("slidesConfg", slidesConfig);
+    const prevConfigs = [...slidesConfig];
+    console.log("Length is entire slides", prevConfigs);
+    const lastSlide = prevConfigs[activeSlide - 1];
+    const lastSlideItems = lastSlide?.slideDataArray;
+    console.log("Last slides items", lastSlideItems);
+    console.log("Last slides items length", lastSlideItems.length);
+    if (lastSlideItems.length == 3) {
+      console.log("Add new slide.... and add chart on that");
+    }
+
+    const isTextAvailable = lastSlideItems.some((item) => item.type === "text");
+    console.log("isTextAvailable", isTextAvailable);
+
+    return { prevConfigs, lastSlide, lastSlideItems, isTextAvailable };
+  };
+
+  function onAddChart() {
+    // Function logic for adding a chart
+    // before adding  chart we can expect a file upload and then preapre a chart
+
+    // if isTextAvailable is available then we need to add new slide as chart and v2 half  half
+    // here we can also  decide 30% text vs 50% text
+    const { prevConfigs, lastSlide, lastSlideItems, isTextAvailable } =
+      getCurrentStatusOfPPT();
+    console.log("lastSlideItems lastSlideItems", lastSlideItems);
+    console.log("isTextAvailable", isTextAvailable);
+    console.log("lastSlide", lastSlide);
+    console.log("prevConfigs", prevConfigs);
+
+    if (isTextAvailable && lastSlideItems.length == 1) {
+      console.log("Text ✅, No  Media : Add in this slide v1=>v2");
+      lastSlideItems.push({
+        ...DEFAULT_CHART_OBJECT,
+      });
+      lastSlide.layout = "v2";
+
+      setSlidesConfig(prevConfigs);
+      layoutGenerator(pptx, prevConfigs);
+      return;
+    }
+    if (isTextAvailable && lastSlideItems.length == 2) {
+      console.log("Text ✅, One Media : Add in this slide  v2=>v3 x");
+      console.log("");
+      lastSlideItems.push({
+        ...DEFAULT_CHART_OBJECT,
+      });
+      lastSlide.layout = "v4";
+      setSlidesConfig(prevConfigs);
+      layoutGenerator(pptx, prevConfigs);
+      return;
+    }
+    if (isTextAvailable && lastSlideItems.length == 3) {
+      console.log("Text ✅, Two Media => Add New Slide");
+      onAddSlide("chart");
+      return;
+    }
+
+    if (!isTextAvailable && lastSlideItems.length == 1) {
+      console.log(
+        "Text ❌, One Media Add in this slide, if this is the case landscape image will be added, later we will worry about layout"
+      );
+      //if this is the case landscape image will be added
+      addSecondMediaOnExistingSlide("chart");
+      return;
+    }
+    if (!isTextAvailable && lastSlideItems.length == 2) {
+      console.log("Text ❌, Two  Media => Add New Slide ");
+      onAddSlide("chart");
+      return;
+    }
+    // it means there is nothing completely new slide
+    if (!isTextAvailable && lastSlideItems.length == 0) {
+      addSingleMediaOnExistingBlankSlide("chart");
+      return;
+    }
+  }
+
+  function onAddTable() {
+    // Function logic for adding a table
+    const { prevConfigs, lastSlide, lastSlideItems, isTextAvailable } =
+      getCurrentStatusOfPPT();
+    // if isTextAvailable is available then we need to add new slide as chart and v2 half  half
+    // here we can also  decide 30% text vs 50% text
+
+    if (isTextAvailable && lastSlideItems.length == 1) {
+      console.log("Text ✅, No  Media : Add in this slide v1=>v2");
+      lastSlideItems.push({
+        ...DEFAULT_TABLE_OBJECT,
+      });
+      lastSlide.layout = "v2";
+
+      console.log("lastSlide", lastSlide);
+
+      console.log("prevConfigs", prevConfigs);
+
+      setSlidesConfig(prevConfigs);
+      layoutGenerator(pptx, prevConfigs);
+      return;
+    }
+    if (isTextAvailable && lastSlideItems.length == 2) {
+      console.log("Text ✅, One Media : Add in this slide  v2=>v3");
+      console.log("Text ✅, One Media : Add in this slide  v2=>v3 x");
+      console.log("");
+      lastSlideItems.push({
+        ...DEFAULT_TABLE_OBJECT,
+      });
+      lastSlide.layout = "v4";
+      setSlidesConfig(prevConfigs);
+      layoutGenerator(pptx, prevConfigs);
+      return;
+    }
+    if (isTextAvailable && lastSlideItems.length == 3) {
+      console.log("Text ✅, Two Media => Add New Slide");
+      onAddSlide("table");
+      return;
+    }
+
+    if (!isTextAvailable && lastSlideItems.length == 1) {
+      console.log(
+        "Text ❌, One Media Add in this slide, if this is the case landscape image will be added, later we will worry about layout"
+      );
+      //if this is the case landscape image will be added
+      addSecondMediaOnExistingSlide("table");
+      return;
+    }
+    if (!isTextAvailable && lastSlideItems.length == 2) {
+      console.log("Text ❌, Two  Media => Add New Slide ");
+      onAddSlide("table");
+      return;
+    }
+    // it means there is nothing completely new slide
+    if (!isTextAvailable && lastSlideItems.length == 0) {
+      addSingleMediaOnExistingBlankSlide("table");
+      return;
+    }
+  }
+
+  function onAddImage() {
+    // Function logic for adding an image
+    // Function logic for adding a table
+    const { prevConfigs, lastSlide, lastSlideItems, isTextAvailable } =
+      getCurrentStatusOfPPT();
+    // if isTextAvailable is available then we need to add new slide as chart and v2 half  half
+    // here we can also  decide 30% text vs 50% text
+
+    if (isTextAvailable && lastSlideItems.length == 1) {
+      console.log("Text ✅, No  Media : Add in this slide v1=>v2");
+      lastSlideItems.push({
+        ...DEFAULT_IMAGE_OBJECT,
+      });
+      lastSlide.layout = "v2";
+
+      console.log("lastSlide", lastSlide);
+
+      console.log("prevConfigs", prevConfigs);
+
+      setSlidesConfig(prevConfigs);
+      layoutGenerator(pptx, prevConfigs);
+      return;
+    }
+    if (isTextAvailable && lastSlideItems.length == 2) {
+      console.log("Text ✅, One Media : Add in this slide  v2=>v3");
+
+      console.log("Text ✅, One Media : Add in this slide  v2=>v3 x");
+      console.log("");
+      lastSlideItems.push({
+        ...DEFAULT_IMAGE_OBJECT,
+      });
+      lastSlide.layout = "v4";
+      setSlidesConfig(prevConfigs);
+      layoutGenerator(pptx, prevConfigs);
+      return;
+    }
+    if (isTextAvailable && lastSlideItems.length == 3) {
+      console.log("Text ✅, Two Media => Add New Slide");
+      onAddSlide("image");
+      return;
+    }
+
+    if (!isTextAvailable && lastSlideItems.length == 1) {
+      console.log(
+        "Text ❌, One Media Add in this slide, if this is the case landscape image will be added, later we will worry about layout"
+      );
+      //if this is the case landscape image will be added
+      addSecondMediaOnExistingSlide("image");
+      return;
+    }
+    if (!isTextAvailable && lastSlideItems.length == 2) {
+      console.log("Text ❌, Two  Media => Add New Slide ");
+      onAddSlide("image");
+      return;
+    }
+    // it means there is nothing completely new slide
+    if (!isTextAvailable && lastSlideItems.length == 0) {
+      addSingleMediaOnExistingBlankSlide("image");
+      return;
+    }
+  }
+
+  function onSummarize() {
+    // Function logic for summarizing
+  }
+  function onAddSlide(type,e) {
+    // Function logic for adding slide
+    console.log("Prev slides Coding", slidesConfig);
+    console.log("type is",type);
+    console.log("2nd is",e);
+    const prevSlides = [...slidesConfig];
+    const newSlideConfig = {
+      ...defaultSlideData,
+      title: "" ,
+      layout: "v1",
+      slideId: slidesConfig.length + 1,
     };
 
-    console.log("old prevSlidesData", prevSlidesData);
-    const newArr = reordered
-      ? prevSlidesData
-      : [...prevSlidesData, newSlideData];
-    console.log("new prevSlidesData 123", newArr);
+    // if (type == "chart") {
+    //   newSlideConfig.slideDataArray = [{ ...DEFAULT_CHART_OBJECT }];
+    // }
+    // if (type == "image") {
+    //   newSlideConfig.slideDataArray = [{ ...DEFAULT_IMAGE_OBJECT }];
+    // }
+    // if (type == "table") {
+    //   newSlideConfig.slideDataArray = [{ ...DEFAULT_TABLE_OBJECT }];
+    // }
+    console.log("New slide", newSlideConfig);
+    prevSlides.push(newSlideConfig);
+    console.log("prevSlides", prevSlides);
+    setSlidesConfig(prevSlides);
+    layoutGenerator(pptx, prevSlides);
+  }
+  // this function for adding items if slide is blank
 
-    setLastSlides(newArr);
-    // let slide = pptx.addSlide();
+  function addSingleMediaOnExistingBlankSlide(type) {
+    // Function logic for adding slide
+    console.log("Prev slides Coding", slidesConfig);
+    const existingSlide = { ...slidesConfig[activeSlide - 1] };
+    console.log("existingSlide", existingSlide);
+    if (type == "chart") {
+      existingSlide.slideDataArray = [{ ...DEFAULT_CHART_OBJECT }];
+    }
+    if (type == "image") {
+      existingSlide.slideDataArray = [{ ...DEFAULT_IMAGE_OBJECT }];
+    }
+    if (type == "table") {
+      existingSlide.slideDataArray = [{ ...DEFAULT_TABLE_OBJECT }];
+    }
+    console.log("New slide", existingSlide);
+    const prevSlides = [...slidesConfig];
+    console.log("prevSlides", prevSlides);
+    prevSlides[activeSlide - 1] = existingSlide;
+    console.log("update slide", prevSlides);
+    setSlidesConfig(prevSlides);
+    layoutGenerator(pptx, prevSlides);
+  }
 
-    // slide.addText("Title 1", {
-    //   x: 0.5, // Position 0.5 inches from the left
-    //   y: 0.5, // Position 0.5 inches from the top
-    //   fontSize: 36, // Large font size for title
-    //   bold: true, // Bold text for the title
-    //   color: "333333", // Dark color
-    // });
+  function addSecondMediaOnExistingSlide(type) {
+    // Function logic for adding slide
+    console.log("Prev slides Coding", slidesConfig);
+    const existingSlide = { ...slidesConfig[activeSlide - 1] };
+    console.log("existingSlide", existingSlide);
+    existingSlide.layout = "v9";
+    if (type == "chart") {
+      const newChartObject = {
+        ...DEFAULT_CHART_OBJECT,
+      };
+      console.log("newChartObject", newChartObject);
+      existingSlide.slideDataArray.push(newChartObject);
+      console.log("existingSlide", existingSlide);
+    }
+    if (type == "image") {
+      const newChartObject = {
+        ...DEFAULT_IMAGE_OBJECT,
+      };
+      console.log("newChartObject", newChartObject);
+      existingSlide.slideDataArray.push(newChartObject);
+    }
+    if (type == "table") {
+      const newChartObject = {
+        ...DEFAULT_TABLE_OBJECT,
+      };
+      console.log("newChartObject", newChartObject);
+      existingSlide.slideDataArray.push(newChartObject);
+    }
+    console.log("New slide 123", existingSlide);
+    const prevSlides = [...slidesConfig];
+    console.log("prevSlides", prevSlides);
+    prevSlides[activeSlide - 1] = existingSlide;
+    console.log("update slide", prevSlides);
 
-    // // Define the bullet points text
-    // const bulletPoints = [
-    //   "Generate PowerPoint: As a user, I want to be able to upload content in DOCX, PDF, or plain text format, for the system to automatically generate PowerPoint slides based on the content I provide.",
-    //   "Generate PowerPoint: As a user, I want to be able to upload content in DOCX, PDF, or plain text format, for the system to automatically generate PowerPoint slides based on the content I provide.",
-    //   "Generate PowerPoint: As a user, I want to be able to upload content in DOCX, PDF, or plain text format, for the system to automatically generate PowerPoint slides based on the content I provide.",
-    // ];
+    setSlidesConfig(prevSlides);
+    layoutGenerator(pptx, prevSlides);
+  }
 
-    // // Add the bullet points below the title
-    // slide.addText(
-    //   bulletPoints.map((point) => ({
-    //     text: point,
-    //     options: {
-    //       bullet: true,
-    //       fontSize: 18,
-    //       color: "333333",
-    //       lineSpacing: 20,
-    //     },
-    //   })),
-    //   {
-    //     x: 0.5, // Position 0.5 inches from the left
-    //     y: 2, // Position 2 inches from the top to leave space for title
-    //     w: 9, // Width of 9 inches to fill most of the slide width
-    //     fontFace: "Arial", // Font face for bullets
-    //   }
-    // );
+  // Generating diff   layout of slide
 
-    newArr.forEach((slideData) => {
-      let slide = pptx.addSlide();
+  function layoutGenerator(pptx, slidesArray) {
+    console.log("Config before selecting layout ", slidesArray);
+    const config = {};
 
-      // Set background color and add content based on type
-      if (slideData.type === "text") {
-        slide.background = { color: "E0F7FA" };
-        slide.addText(slideData.pptContent, { ...slideData.pptOptions });
-      } else if (slideData.type === "image") {
-        slide.background = { color: "FFF9C4" };
-        slide.addImage({
-          path: slideData.path,
-          ...slideData.pptOptions,
-        });
-      } else if (slideData.type === "chart") {
-        slide.background = { color: "E1F5FE" };
-        console.log("Adding existing chart type:", slideData.chartType);
-        // Use the stored `chartType` from `slideData`
-        slide.addChart(
-          pptx.ChartType[slideData.chartType],
-          [...slideData.pptContent],
-          { ...slideData.pptOptions }
-        );
-      } else if (slideData.type === "table") {
-        slide.background = { color: "FCE4EC" };
-        slide.addTable([...slideData.pptContent], { ...slideData.pptOptions });
+    slidesArray.forEach((slideData) => {
+      console.log("slideData", slideData);
+      console.log("Layout is", slideData?.layout);
+
+      switch (slideData.layout) {
+        case "v1":
+          //Active
+          generateTextAndTableSlideV1(pptx, slideData);
+          break;
+
+        case "v2":
+          //Active
+          generateTextAndTableSlideV2(pptx, slideData);
+          break;
+
+        case "v3":
+          generateTextAndTableSlideV3(pptx, config);
+          break;
+
+        case "v4":
+          //Active
+          generateTextAndTableSlideV4(pptx, slideData);
+          break;
+
+        case "v5":
+          generateTextAndTableSlideV5(pptx, config);
+          break;
+
+        case "v6":
+          generateTextAndTableSlideV6(pptx, config);
+          break;
+
+        case "v7":
+          generateTextAndTableSlideV7(pptx, config);
+          break;
+
+        case "v8":
+          generateTextAndTableSlideV8(pptx, config);
+          break;
+        case "v9":
+          generateTextAndTableSlideV9(pptx, slideData);
+          break;
+        case "v10":
+          generateTextAndTableSlideV10(pptx, config);
+          break;
+        case "v11":
+          generateTextAndTableSlideV11(pptx, config);
+          break;
+
+        default:
+          console.log("Unknown layout value: " + layout.value);
+          break;
       }
     });
 
-    // Convert PPT to Blob and upload
+    // Create a full-slide rectangle with a gradient-like background
+    // slide.background = { color: "EFF212" }; // Light gray background
 
     pptx.write("base64").then(async (base64String) => {
       const byteCharacters = atob(base64String);
@@ -372,46 +527,39 @@ function PPTGen() {
       // Upload the Blob to Azure Blob Storage
       const res = await uploadFileToBlob2(
         pptBlob,
-        `${
-          isChecked ? "Final-" : reordered ? "Reordered=" : ""
-        }${slideName}.pptx`
+        `${slideName}_${Date.now()}.pptx`
       );
-      console.log("res", res);
+
       setLatestBlob(res);
-      console.log("File Uploaded");
+
+      const prevArr = [...latestSlides];
+      prevArr.push(res);
+
+      setLatestSlides(prevArr);
+      // if (!reordered) setLatestSlides(prevArr);
 
       const blobService = new BlobServiceClient(
         `https://${storageAccountName}.blob.core.windows.net/?${sasToken}`
       );
       const containerClient = blobService.getContainerClient(containerName);
-      setIsChecked(false);
       return getBlobsInContainer(containerClient);
     });
   }
 
-  function getTime() {
-    const now = new Date();
-    const formattedString =
-      `${now.getDate().toString().padStart(2, "0")}_` +
-      `${(now.getMonth() + 1).toString().padStart(2, "0")}_` +
-      `${now.getFullYear()}_` +
-      `${now.getHours().toString().padStart(2, "0")}_` +
-      `${now.getMinutes().toString().padStart(2, "0")}_` +
-      `${now.getSeconds().toString().padStart(2, "0")}`;
+  // Main function
+  async function generateAndUploadPPT(prevSlidesData = lastSlides, reordered) {
+    setIsLoading(true);
 
-    console.log(formattedString);
-    return formattedString;
+    //  logic to decide layout
+
+    console.log("*****", slidesConfig);
+
+    layoutGenerator(pptx, [
+      { ...defaultSlideData, type: "chart", layout: "v1" },
+    ]);
+
+    return;
   }
-
-  useEffect(() => {
-    const blobService = new BlobServiceClient(
-      `https://${storageAccountName}.blob.core.windows.net/?${sasToken}`
-    );
-    const containerClient = blobService.getContainerClient(containerName);
-
-    getBlobsInContainer(containerClient);
-    return () => {};
-  }, []);
 
   // Handle form submission for generating PPT
   const handleGeneratePPT = () => {
@@ -421,9 +569,9 @@ function PPTGen() {
   const handleRemove = (slideOrder) => {
     // Clone the current slides array
     const reorderedSlides = [...lastSlides];
-    if(reorderedSlides.length==1){
-      alert('PPT has 1 slide cant be deleted')
-      return
+    if (reorderedSlides.length == 1) {
+      alert("PPT has 1 slide cant be deleted");
+      return;
     }
     // Find the index of the slide to be removed
     const slideIndex = reorderedSlides.findIndex(
@@ -445,238 +593,222 @@ function PPTGen() {
     }
   };
 
-  return (
-    <div className="relative min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-gray-800 h-[78px] flex items-center shadow-lg">
-        <h1 className="text-3xl font-bold px-6 text-white">PPT Generator</h1>
-      </header>
+  const handleTextButtonClick = () => {
+    console.log("From Text button clicked");
+    setTextView(true);
+  };
 
-      <div className="flex h-[90vh]">
-        {/* Left Sidebar - Navigation and Content Input */}
-        <aside className="w-1/3 p-6 bg-white border-r border-gray-300 shadow-md">
-          {/* Tabs for Slide Type Selection */}
-          <div className="flex space-x-4 mb-6 bg-gray-100 p-4 rounded-lg shadow-sm">
-            {tabs.map((tab) => (
-              <button
-                key={tab.value}
-                onClick={() => setSlideMode(tab.value)}
-                className={`px-4 py-2 rounded-md transition-all duration-150 ${
-                  slideMode === tab.value
-                    ? "bg-blue-600 text-white font-semibold shadow-md"
-                    : "bg-white text-gray-700 hover:bg-gray-200"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+  const handleUploadButtonClick = () => {
+    console.log("Upload a File button clicked");
+    setTextView(false);
+  };
+  const handleGenerateSlides = () => {
+    console.log("Upload a File button clicked");
+    setActiveSlide(1);
+    setIsGenerated(true);
+
+    // Here we are generating first slide,
+    // here we need to add title and data ( as text only )
+    // for now i have added dummy bullet points
+    const prevConfigs = {
+      ...defaultSlideData,
+      type: "text",
+      layout: "v1",
+      slideDataArray: [{ ...DEFAULT_TEXT_OBJECT }],
+      title: pptName,
+    };
+    setSlidesConfig([prevConfigs]);
+    // and we are preparing very first slide using Title and Large Max text : layout v1
+    layoutGenerator(pptx, [prevConfigs]);
+  };
+
+  return (
+    <div className="relative min-h-screen  ">
+      {!isGenerated ? (
+        <div className=" flex flex-col border border-red-400 h-full p-6">
+          <h1 className="text-2xl font-bold  text-black">
+            Generate Presentation With AI
+          </h1>
+
+          <div className="my-4  ">
+            <label className="text-sm font-semibold text-gray-700 mb-1 block">
+              Presentation Title
+            </label>
+            <input
+              placeholder="Presentation text"
+              value={pptName}
+              onChange={(e) => setPptName(e.target.value)}
+              className=" p-2 border border-gray-300 w-[400px] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div className="flex gap-4">
+            <button
+              onClick={handleTextButtonClick}
+              className={` border  border-blue-600  font-medium py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                textView && "bg-blue-600 text-gray-50"
+              }`}
+            >
+              From Text
+            </button>
+            <button
+              onClick={handleUploadButtonClick}
+              className={` border border-blue-600  font-medium py-2 px-4 rounded-lg  focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                !textView && "bg-blue-600 text-gray-50"
+              }`}
+            >
+              Upload a File
+            </button>
           </div>
 
-          {/* Conditional Content based on Slide Mode */}
-          {slideMode === "chart" && (
-            <div className="space-y-4 mb-4">
-              <label className="font-semibold text-gray-700">
-                Select Chart Type
-              </label>
-              <select
-                value={selectedChartType}
-                onChange={handleSelectionChange}
-                className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {chartOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+          {/* <OfficeFileTextExtractor/> */}
 
-          {/* Content Input Section */}
-          {slideMode !== "image" ? (
-            <div className="mb-6 hidden">
-              <label className="text-sm font-semibold text-gray-700 mb-1 block">
-                Enter PPT {slideMode.toUpperCase()} Content
-              </label>
+          <div className="mt-4  border">
+            {textView ? (
               <textarea
                 placeholder="Enter content here"
-                value={pptContent}
-                onChange={(e) => handleContentChange(e)}
-                className="w-full h-32 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={pdfText}
+                onChange={(e) => setPdfText(e.target.value)}
+                className="w-full h-[300px] p-2 text-sm font-serif leading-10  border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-            </div>
-          ) : (
-            <div className="mb-6">
-              <label className="text-sm font-semibold text-gray-700 mb-1 block">
-                Enter Image URL
-              </label>
-              <div className="flex gap-2 items-center">
-                <input
-                  type="text"
-                  placeholder="Paste Image URL"
-                  value={imageURL}
-                  onChange={(e) => setImageURL(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            ) : (
+              <div className="flex w-[98vw] justify-center items-center  p-1">
+                {/* <Dashboard
+                  uppy={uppy}
+                  height={190}
+                  hideUploadButton
+                  proudlyDisplayPoweredByUppy={false}
+                /> */}
+                <PdfTextExtractor
+                  pdfText={pdfText}
+                  setPdfText={setPdfText}
+                  setTextView={setTextView}
                 />
-                {imageURL && (
-                  <img
-                    src={imageURL}
-                    alt="Image preview"
-                    className="w-12 h-12 rounded-md shadow"
-                  />
-                )}
+                <DocTextExtractor
+                  text={pdfText}
+                  setText={setPdfText}
+                  setTextView={setTextView}
+                />
               </div>
-            </div>
-          )}
-
-          {!isLoading ? (
-            <button
-              disabled={isLoading}
-              onClick={handleGeneratePPT}
-              className="w-full px-4 py-2 mt-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-all duration-150 shadow-md"
-            >
-              Add {slideMode.toLowerCase()} Slide
-            </button>
-          ) : (
-            <button
-              disabled={isLoading}
-              className="w-full px-4 py-2 mt-2 bg-gray-200 opacity-30 text-white font-semibold rounded-md hover:bg-blue-700 transition-all duration-150 shadow-md"
-            >
-              Please wait
-            </button>
-          )}
-
-          {lastSlides.length > 0 ? (
-            <section className="mt-10">
-              <h2 className="text-xl font-semibold text-gray-800 mb-1 flex gap-2 items-center">
-                Reorder Slides{" "}
-                <p className="font-light text-sm">({lastSlides.length})</p>
-              </h2>
-              {lastSlides.length <= 1 ? (
-                <p className="mb-1 text-gray-500 text-left">
-                  Add at least two slides to enable reordering.
-                </p>
-              ) : (
-                <p className="mb-1 text-gray-500 text-left">
-                  Now you can drag and reorder slides
-                </p>
-              )}
-              <div
-                className={`flex flex-wrap gap-4 p-4 border-dashed border-2 border-gray-300 rounded-lg bg-white shadow-sm ${
-                  isLoading && "opacity-30"
-                }`}
-              >
-                <Draggable
-                  key={lastSlides.length}
-                  onPosChange={(currentPos, newPos) => {
-                    if (isLoading) return;
-                    console.log(`Moved from ${currentPos} to ${newPos}`);
-                    if (newPos == currentPos) return;
-                    const reorderedSlides = [...lastSlides];
-                    const [movedSlide] = reorderedSlides.splice(currentPos, 1);
-                    reorderedSlides.splice(newPos, 0, movedSlide);
-                    const updatedSlides = reorderedSlides.map(
-                      (slide, index) => ({
-                        ...slide,
-                        order: index,
-                      })
-                    );
-                    console.log("updatedSlides", updatedSlides);
-
-                    // Update the state with the newly ordered slides
-                    setLastSlides(updatedSlides);
-                    generateAndUploadPPT(updatedSlides, true);
-                  }}
-                  dragItemStyling={{ cursor: "grab" }}
-                >
-                  {lastSlides.map((slide, index) => (
-                    <div
-                      key={index}
-                      className="relative w-24 h-24 flex flex-col items-center bg-gray-200 rounded-lg shadow-lg transition-all duration-150"
-                    >
-                      {/* Cross Button */}
-                      <button
-                        className="absolute top-1 right-1 w-5 h-5 flex items-center justify-center bg-red-500 text-white rounded-full hover:bg-red-600 focus:outline-none"
-                        onClick={() => handleRemove(slide.order)} // example handler for removing the item
-                      >
-                        ✕
-                      </button>
-
-                      <div className="w-full h-20 bg-gray-300 rounded-t-lg flex items-center justify-center">
-                        <h1 className="text-2xl font-bold text-black">
-                          {slide.order}
-                        </h1>
-                      </div>
-                      <p className="text-center text-xs px-1 font-light truncate w-24 text-gray-700 mt-1">
-                        {slide.name}
-                      </p>
-                    </div>
-                  ))}
-                </Draggable>
-              </div>
-            </section>
-          ) : (
-            <></>
-          )}
-        </aside>
-
-        {/* Main Content - PPT Viewer and Reorder Section */}
-        <main className="w-2/3 p-6 bg-gray-100">
-          <div className="bg-yellow-100 p-4 rounded-md text-center mb-6">
-            <p className="text-gray-700 font-semibold">
-              This is a Proof of Concept (POC) to demonstrate the feasibility of
-              the product.
-            </p>
-          </div>
-          <div>
-            {/* <button onClick={toggleControl}>
-        {isControlEnabled ? "Disable Control" : "Enable Control"}
-      </button> */}
+            )}
           </div>
 
-          {latestBlob ? (
-            <div className="mt-8 bg-white rounded-lg shadow-md p-6">
-              <DocumentViewer
-                style={{ height: "50vh", width: "100%" }}
-                queryParams="hl=NL"
-                url={latestBlob}
-                viewerUrl={latestBlob}
-                viewer="office"
-                overrideLocalhost="https://react-doc-viewer.firebaseapp.com/"
-              />
-            </div>
-          ) : (
-            <p className="text-3xl text-gray-600 text-center py-10">
-              Select a slide to preview
-            </p>
-          )}
-          <div className="p-6 bg-gray-100">
-            <h2 className="text-2xl font-semibold mb-2">Select a Template</h2>
-            <div className="flex space-x-4 overflow-x-auto">
+          <div className="  mt-4">
+            <h2 className="text-xl font-semibold mb-3">Select Templates</h2>
+            <div className="flex space-x-4 overflow-x-auto ">
               {templates.map((template) => (
                 <div
                   key={template.id}
                   onClick={() => {
-                    alert("Work in progress");
-                    return;
                     handleSelectTemplate(template);
                   }}
-                  className={`p-4 w-44 h-24 flex items-center justify-center rounded-lg shadow-md cursor-pointer transition duration-150
-              ${
-                selectedTemplate.id === template.id
-                  ? "bg-blue-500 text-white font-semibold"
-                  : "bg-white text-gray-700 hover:bg-blue-100"
-              } ${template.name !== "Blank Template" && "opacity-25"}`}
+                  className={`p-4 w-[245px] h-[136px] border flex items-center justify-center shadow-md cursor-pointer transition duration-150
+      ${
+        selectedTemplate.id === template.id
+          ? "text-2xl font-semibold"
+          : "text-gray-700 hover:bg-gray-500"
+      }
+   `}
+                  style={{ backgroundColor: template.bgColor }} // Inline style for dynamic background color
                 >
-                  {template.name}
+                  {template.name} {selectedTemplate.id === template.id && "✔️"}
                 </div>
               ))}
             </div>
 
+            <div className="mt-6 flex justify-end ">
+              <button
+                onClick={handleGenerateSlides}
+                className="bg-blue-600 text-white font-medium py-2 px-4 rounded-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                Generate PPT
+              </button>
+            </div>
             {/* Displaying the selected template */}
           </div>
-        </main>
-      </div>
+        </div>
+      ) : (
+        <div className="flex flex-col w-full  ">
+          <span
+            className="p-2 cursor-pointer"
+            onClick={() => {
+              setIsGenerated(false);
+            }}
+          >
+            Go back
+          </span>
+          {/* Left Sidebar - Navigation and Content Input */}
+
+          {/* Main Content - PPT Viewer and Reorder Section */}
+          <main className="w-1/2 p-2 bg-gray-100 flex justify-center border flex-col ">
+            <SlidePagination
+              activeSlide={activeSlide}
+              slidesConfig={slidesConfig}
+              setActiveSlide={setActiveSlide}
+            />
+            <div className="flex gap-2  w-full">
+              {latestBlob ? (
+                <div className=" bg-white rounded-lg shadow-md p-2 w-[98%]">
+                  <DocumentViewer
+                    style={{ height: "50vh", width: "100%" }}
+                    queryParams="hl=NL"
+                    url={latestBlob}
+                    viewerUrl={encodeURIComponent(latestBlob)}
+                    viewer="office"
+                    overrideLocalhost="https://react-doc-viewer.firebaseapp.com/"
+                  />
+                </div>
+              ) : (
+                <p className="text-3xl text-gray-600 text-center py-10">
+                  Select a slide to preview
+                </p>
+              )}
+            </div>
+          </main>
+          {/* <SlideControls
+            handleUploadButtonClick={handleDropdownChange}
+            handleDropdownChange={handleDropdownChange}
+          /> */}
+          <SlideControlsTest
+            onAddChart={onAddChart}
+            onAddTable={onAddTable}
+            onAddImage={onAddImage}
+            onSummarize={onSummarize}
+            onAddSlide={onAddSlide}
+          />
+          <aside className="block p-6 bg-white border-r border-gray-300 shadow-md  flex ">
+            <div className="flex flex-col w-full">
+              {/* <div className="flex space-x-4 flex-wrap gap-2 mb-6 bg-gray-100 p-4 rounded-lg ">
+                {layouts.map((tab) => (
+                  <button
+                    key={tab.value}
+                    onClick={() => setLayout(tab)}
+                    className={`px-4 py-2 rounded-md transition-all duration-150  ${
+                      layout.value === tab.value
+                        ? "bg-blue-600 text-white font-semibold shadow-md"
+                        : "bg-white text-gray-700 hover:bg-gray-200"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div> */}
+              {/* <button
+                disabled={isLoading}
+                onClick={handleGeneratePPT}
+                className="w-[300px] px-4 py-2 my-2 h-10 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-all duration-150 shadow-md"
+              >
+                Generate Slide
+              </button> */}
+              {/* <img
+                className="w-full"
+                src="https://i.ibb.co/Sxzh2PS/11layout.jpg"
+                alt="11layout"
+                border="0"
+              /> */}
+            </div>
+          </aside>
+        </div>
+      )}
     </div>
   );
 }

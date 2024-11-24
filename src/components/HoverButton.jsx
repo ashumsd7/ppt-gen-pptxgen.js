@@ -21,9 +21,9 @@ function HoverButton() {
   return (
     <div className="relative inline-block">
       <button
-        // onClick={handleMouseEnter}
+        onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        onClick={handleClick}
+        // onClick={handleClick}
         className={`flex items-center justify-center w-12 h-12 p-2 rounded-full bg-yellow-500 text-black transition-all duration-300 ${
           isHovered || isClicked ? "w-36" : "w-12"
         }`}
