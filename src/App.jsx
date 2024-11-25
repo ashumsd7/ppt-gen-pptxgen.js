@@ -374,15 +374,15 @@ function PPTGen () {
       slideId: slidesConfig.length + 1,
     };
 
-    // if (type == "chart") {
-    //   newSlideConfig.slideDataArray = [{ ...DEFAULT_CHART_OBJECT }];
-    // }
-    // if (type == "image") {
-    //   newSlideConfig.slideDataArray = [{ ...DEFAULT_IMAGE_OBJECT }];
-    // }
-    // if (type == "table") {
-    //   newSlideConfig.slideDataArray = [{ ...DEFAULT_TABLE_OBJECT }];
-    // }
+    if (type == "chart") {
+      newSlideConfig.slideDataArray = [{ ...DEFAULT_CHART_OBJECT }];
+    }
+    if (type == "image") {
+      newSlideConfig.slideDataArray = [{ ...DEFAULT_IMAGE_OBJECT }];
+    }
+    if (type == "table") {
+      newSlideConfig.slideDataArray = [{ ...DEFAULT_TABLE_OBJECT }];
+    }
     console.log("New slide", newSlideConfig);
     prevSlides.push(newSlideConfig);
     console.log("prevSlides", prevSlides);
