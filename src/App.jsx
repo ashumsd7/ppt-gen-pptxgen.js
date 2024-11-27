@@ -33,15 +33,16 @@ import {
 } from "./data";
 import { layouts, templates } from "./data/constant";
 
- 
 import SlidePagination from "./components/PPT/SlidePagination";
 import PdfTextExtractor from "./components/PPT/PDFtextExtractor";
 import DocTextExtractor from "./components/PPT/DocTextExtractor";
 import SlideControlsTest from "./components/PPT/SlideControlsTest";
+import PdfViewer from "./components/PPT/PdfViewer";
+import ReactPdf from "./components/PPT/ReactPdf";
 
 // Tab data
 
-function PPTGen () {
+function PPTGen() {
   // State for toggling between "Generate PPT" and "Show List"
   const [pdfText, setPdfText] = useState("");
   const [blobList, setBlobList] = useState([]);
@@ -100,6 +101,7 @@ function PPTGen () {
   );
 
   const [lastSlides, setLastSlides] = useState([]);
+  const [pdfUrl, setPdfUrl] = useState();
 
   useEffect(() => {
     setSlideName(
@@ -149,6 +151,7 @@ function PPTGen () {
 
       const fileUrl = `https://${storageAccountName}.blob.core.windows.net/${containerName}/${fileName}`;
       console.log("File URL:", fileUrl);
+      onTestPdfConvertor(fileUrl);
       return fileUrl;
     } catch (error) {
       console.error("Error uploading file:", error);
@@ -361,15 +364,15 @@ function PPTGen () {
   function onSummarize() {
     // Function logic for summarizing
   }
-  function onAddSlide(type,e) {
+  function onAddSlide(type, e) {
     // Function logic for adding slide
     console.log("Prev slides Coding", slidesConfig);
-    console.log("type is",type);
-    console.log("2nd is",e);
+    console.log("type is", type);
+    console.log("2nd is", e);
     const prevSlides = [...slidesConfig];
     const newSlideConfig = {
       ...defaultSlideData,
-      title: "" ,
+      title: "",
       layout: "v1",
       slideId: slidesConfig.length + 1,
     };
@@ -625,6 +628,44 @@ function PPTGen () {
     layoutGenerator(pptx, [prevConfigs]);
   };
 
+  // Function to call the /convert-pptx endpoint
+  async function convertPptxToPdf(pptxUrl) {
+    try {
+      // Send the POST request to the backend with pptxUrl
+      const response = await fetch("http://localhost:3000/convert-pptx", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ pptxUrl }), // Send the pptxUrl as JSON
+      });
+
+      // Check if the response is successful
+      if (!response.ok) {
+        throw new Error("Failed to convert PPTX to PDF");
+      }
+
+      // Parse the JSON response
+      const data = await response.json();
+      console.log("PDF URL:", data.pdfUrl); // Print the PDF URL
+      return data.pdfUrl; // Return the PDF URL
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  }
+
+  function onTestPdfConvertor(url) {
+    const pptxUrl =
+      url ||
+      "https://codemonkpptgen.blob.core.windows.net/cmpptgencontainerv1/Slide_text_379_1732692286147.pptx";
+    convertPptxToPdf(pptxUrl).then((pdfUrl) => {
+      if (pdfUrl) {
+        // Use the PDF URL as needed, e.g., display it or provide a download link
+        console.log("Download PDF from:>>>>>>>> 123", pdfUrl);
+        setPdfUrl(pdfUrl);
+      }
+    });
+  }
   return (
     <div className="relative min-h-screen  ">
       {!isGenerated ? (
@@ -759,6 +800,12 @@ function PPTGen () {
                     viewer="office"
                     overrideLocalhost="https://react-doc-viewer.firebaseapp.com/"
                   />
+                  {/*                   
+                  <PdfViewer
+                    pdfUrl={
+                      "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+                    }
+                  /> */}
                 </div>
               ) : (
                 <p className="text-3xl text-gray-600 text-center py-10">
