@@ -39,6 +39,7 @@ import DocTextExtractor from "./components/PPT/DocTextExtractor";
 import SlideControlsTest from "./components/PPT/SlideControlsTest";
 import PdfViewer from "./components/PPT/PdfViewer";
 import ReactPdf from "./components/PPT/ReactPdf";
+import ImageViewer from "./components/PPT/ImageViewer";
 
 // Tab data
 
@@ -52,6 +53,7 @@ function PPTGen() {
   const [pptName, setPptName] = useState(
     "United_" + Math.ceil(Math.random() * 100)
   );
+  const [imageArray, setImageArray] = useState([]);
 
   const [textView, setTextView] = useState(true);
   const [isGenerated, setIsGenerated] = useState(false);
@@ -126,11 +128,12 @@ function PPTGen() {
         slideMode === "chart" ? `${slideMode}_${selectedChartType}_` : slideMode
       }_${blobList.length + 1}`
     );
-    setIsLoading(false);
+
     return returnedBlobUrls;
   };
 
   async function uploadFileToBlob2(fileBlob, fileName) {
+    setIsLoading(true);
     try {
       // Create a BlobServiceClient
       const blobServiceClient = new BlobServiceClient(
@@ -531,10 +534,7 @@ function PPTGen() {
       });
 
       // Upload the Blob to Azure Blob Storage
-      const res = await uploadFileToBlob2(
-        pptBlob,
-        `${slideName}_${Date.now()}.pptx`
-      );
+      const res = await uploadFileToBlob2(pptBlob, `Codemonk.pptx`);
 
       setLatestBlob(res);
 
@@ -554,8 +554,6 @@ function PPTGen() {
 
   // Main function
   async function generateAndUploadPPT(prevSlidesData = lastSlides, reordered) {
-    setIsLoading(true);
-
     //  logic to decide layout
 
     console.log("*****", slidesConfig);
@@ -647,7 +645,10 @@ function PPTGen() {
 
       // Parse the JSON response
       const data = await response.json();
-      console.log("PDF URL:", data.pdfUrl); // Print the PDF URL
+      console.log("PDF URL:", data.uploadedUrls); // Print the PDF URL
+      setImageArray(data?.uploadedUrls);
+      setIsLoading(false);
+
       return data.pdfUrl; // Return the PDF URL
     } catch (error) {
       console.error("Error:", error);
@@ -754,7 +755,7 @@ function PPTGen() {
    `}
                   style={{ backgroundColor: template.bgColor }} // Inline style for dynamic background color
                 >
-                  {template.name} {selectedTemplate.id === template.id && "✔️"}
+                  {template.name} {selectedTemplate.id === template.id && ""}
                 </div>
               ))}
             </div>
@@ -783,30 +784,48 @@ function PPTGen() {
           {/* Left Sidebar - Navigation and Content Input */}
 
           {/* Main Content - PPT Viewer and Reorder Section */}
-          <main className="w-1/2 p-2 bg-gray-100 flex justify-center border flex-col ">
-            <SlidePagination
+          <main className="w-full p-2 bg-gray-100 flex  border flex-col ">
+            {/* <SlidePagination
               activeSlide={activeSlide}
               slidesConfig={slidesConfig}
               setActiveSlide={setActiveSlide}
-            />
+            /> */}
             <div className="flex gap-2  w-full">
               {latestBlob ? (
-                <div className=" bg-white rounded-lg shadow-md p-2 w-[98%]">
-                  <DocumentViewer
+                <>
+                  {/* <DocumentViewer
                     style={{ height: "50vh", width: "100%" }}
                     queryParams="hl=NL"
                     url={latestBlob}
                     viewerUrl={encodeURIComponent(latestBlob)}
                     viewer="office"
                     overrideLocalhost="https://react-doc-viewer.firebaseapp.com/"
-                  />
+                  /> */}
+                  {isLoading ? (
+                    "Loading"
+                  ) : (
+                    <ImageViewer
+                      imageArray={imageArray}
+                      activeSlide={activeSlide}
+                      setActiveSlide={setActiveSlide}
+                      controls={
+                        <SlideControlsTest
+                          onAddChart={onAddChart}
+                          onAddTable={onAddTable}
+                          onAddImage={onAddImage}
+                          onSummarize={onSummarize}
+                          onAddSlide={onAddSlide}
+                        />
+                      }
+                    />
+                  )}
                   {/*                   
                   <PdfViewer
                     pdfUrl={
                       "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
                     }
                   /> */}
-                </div>
+                </>
               ) : (
                 <p className="text-3xl text-gray-600 text-center py-10">
                   Select a slide to preview
@@ -818,45 +837,13 @@ function PPTGen() {
             handleUploadButtonClick={handleDropdownChange}
             handleDropdownChange={handleDropdownChange}
           /> */}
-          <SlideControlsTest
+          {/* <SlideControlsTest
             onAddChart={onAddChart}
             onAddTable={onAddTable}
             onAddImage={onAddImage}
             onSummarize={onSummarize}
             onAddSlide={onAddSlide}
-          />
-          <aside className="block p-6 bg-white border-r border-gray-300 shadow-md  flex ">
-            <div className="flex flex-col w-full">
-              {/* <div className="flex space-x-4 flex-wrap gap-2 mb-6 bg-gray-100 p-4 rounded-lg ">
-                {layouts.map((tab) => (
-                  <button
-                    key={tab.value}
-                    onClick={() => setLayout(tab)}
-                    className={`px-4 py-2 rounded-md transition-all duration-150  ${
-                      layout.value === tab.value
-                        ? "bg-blue-600 text-white font-semibold shadow-md"
-                        : "bg-white text-gray-700 hover:bg-gray-200"
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div> */}
-              {/* <button
-                disabled={isLoading}
-                onClick={handleGeneratePPT}
-                className="w-[300px] px-4 py-2 my-2 h-10 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-all duration-150 shadow-md"
-              >
-                Generate Slide
-              </button> */}
-              {/* <img
-                className="w-full"
-                src="https://i.ibb.co/Sxzh2PS/11layout.jpg"
-                alt="11layout"
-                border="0"
-              /> */}
-            </div>
-          </aside>
+          /> */}
         </div>
       )}
     </div>

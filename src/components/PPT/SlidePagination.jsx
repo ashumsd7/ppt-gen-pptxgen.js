@@ -1,12 +1,13 @@
 import React from "react";
 
-function SlidePagination({activeSlide,setActiveSlide,slidesConfig}) {
+function SlidePagination({activeSlide,setActiveSlide,slidesConfig,setActiveIndex}) {
   return (
     <div className="flex items-center justify-center space-x-4">
       <button
         onClick={() => {
           if (activeSlide > 1) {
             setActiveSlide(activeSlide - 1);
+            setActiveIndex(activeSlide)
           }
         }}
         className={`text-gray-600 hover:text-black ${
@@ -23,6 +24,7 @@ function SlidePagination({activeSlide,setActiveSlide,slidesConfig}) {
         onClick={() => {
           if (activeSlide < slidesConfig.length) {
             setActiveSlide(activeSlide + 1);
+            setActiveIndex(activeSlide)
           }
         }}
         className={`text-gray-600 hover:text-black ${

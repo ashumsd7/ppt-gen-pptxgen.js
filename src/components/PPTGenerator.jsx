@@ -625,7 +625,7 @@ function PPTGenerator() {
   return (
     <div className="relative min-h-screen  ">
       {!isGenerated ? (
-        <div className=" flex flex-col border border-red-400 h-full p-6">
+        <div className=" flex flex-col border  h-full p-6">
           <h1 className="text-2xl font-bold  text-black">
             Generate Presentation With AI
           </h1>
@@ -710,7 +710,7 @@ function PPTGenerator() {
    `}
                   style={{ backgroundColor: template.bgColor }} // Inline style for dynamic background color
                 >
-                  {template.name} {selectedTemplate.id === template.id && "✔️"}
+                  {template.name} {selectedTemplate.id === template.id && ""}
                 </div>
               ))}
             </div>
