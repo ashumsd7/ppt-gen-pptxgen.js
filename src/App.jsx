@@ -461,6 +461,7 @@ function PPTGen() {
   // Generating diff   layout of slide
 
   function layoutGenerator(pptx, slidesArray) {
+    setIsLoading(true);
     console.log("Config before selecting layout ", slidesArray);
     const config = {};
 
@@ -548,6 +549,7 @@ function PPTGen() {
         `https://${storageAccountName}.blob.core.windows.net/?${sasToken}`
       );
       const containerClient = blobService.getContainerClient(containerName);
+
       return getBlobsInContainer(containerClient);
     });
   }
@@ -567,7 +569,6 @@ function PPTGen() {
 
   // Handle form submission for generating PPT
   const handleGeneratePPT = () => {
-    setIsLoading(true);
     generateAndUploadPPT();
   };
   const handleRemove = (slideOrder) => {
@@ -609,7 +610,9 @@ function PPTGen() {
   const handleGenerateSlides = () => {
     console.log("Upload a File button clicked");
     setActiveSlide(1);
-    setIsGenerated(true);
+    setImageArray([]);
+    setLatestBlob("");
+    setPdfUrl("");
 
     // Here we are generating first slide,
     // here we need to add title and data ( as text only )
@@ -645,10 +648,12 @@ function PPTGen() {
 
       // Parse the JSON response
       const data = await response.json();
+      console.log("data", data);
       console.log("PDF URL:", data.uploadedUrls); // Print the PDF URL
       setImageArray(data?.uploadedUrls);
+      setPdfUrl(data?.pdfUrl);
       setIsLoading(false);
-
+      setIsGenerated(true);
       return data.pdfUrl; // Return the PDF URL
     } catch (error) {
       console.error("Error:", error);
@@ -660,6 +665,7 @@ function PPTGen() {
       url ||
       "https://codemonkpptgen.blob.core.windows.net/cmpptgencontainerv1/Slide_text_379_1732692286147.pptx";
     convertPptxToPdf(pptxUrl).then((pdfUrl) => {
+      console.log(">>>", pdfUrl);
       if (pdfUrl) {
         // Use the PDF URL as needed, e.g., display it or provide a download link
         console.log("Download PDF from:>>>>>>>> 123", pdfUrl);
@@ -667,10 +673,17 @@ function PPTGen() {
       }
     });
   }
+
+  function onClickDownload(type = "pdf") {
+    const link = document.createElement("a");
+    link.href = type == "pdf" ? pdfUrl : latestBlob;
+    link.download = "document.pdf"; // Specify the name of the downloaded file
+    link.click();
+  }
   return (
     <div className="relative min-h-screen  ">
       {!isGenerated ? (
-        <div className=" flex flex-col border border-red-400 h-full p-6">
+        <div className=" flex flex-col border  h-full p-6">
           <h1 className="text-2xl font-bold  text-black">
             Generate Presentation With AI
           </h1>
@@ -762,10 +775,11 @@ function PPTGen() {
 
             <div className="mt-6 flex justify-end ">
               <button
+                disabled={isLoading}
                 onClick={handleGenerateSlides}
                 className="bg-blue-600 text-white font-medium py-2 px-4 rounded-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                Generate PPT
+                {isLoading ? "Generating..." : " Generate PPT"}
               </button>
             </div>
             {/* Displaying the selected template */}
@@ -773,18 +787,45 @@ function PPTGen() {
         </div>
       ) : (
         <div className="flex flex-col w-full  ">
-          <span
-            className="p-2 cursor-pointer"
-            onClick={() => {
-              setIsGenerated(false);
-            }}
-          >
-            Go back
-          </span>
+          <div className="flex gap-2 justify-between py-2 px-6">
+            <span
+              className="p-2 cursor-pointer"
+              onClick={() => {
+                if(isLoading)
+                return
+                setIsGenerated(false);
+              }}
+            >
+              {isLoading ? "Please Wait..." : "Go back"}
+            </span>
+
+            <div className="flex gap-2">
+              {pdfUrl && (
+                <button
+                  onClick={() => {
+                    onClickDownload("pdf");
+                  }}
+                  className={` border border-blue-600  font-medium py-2 px-4 text-blue-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 `}
+                >
+                  Download as PDF
+                </button>
+              )}
+              {latestBlob && (
+                <button
+                  onClick={() => {
+                    onClickDownload("ppt");
+                  }}
+                  className={` border border-blue-600  font-medium py-2 px-4 text-blue-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 `}
+                >
+                  Download as PPT
+                </button>
+              )}
+            </div>
+          </div>
           {/* Left Sidebar - Navigation and Content Input */}
 
           {/* Main Content - PPT Viewer and Reorder Section */}
-          <main className="w-full p-2 bg-gray-100 flex  border flex-col ">
+          <main className="w-full p-2  flex  border flex-col ">
             {/* <SlidePagination
               activeSlide={activeSlide}
               slidesConfig={slidesConfig}
@@ -801,24 +842,22 @@ function PPTGen() {
                     viewer="office"
                     overrideLocalhost="https://react-doc-viewer.firebaseapp.com/"
                   /> */}
-                  {isLoading ? (
-                    "Loading"
-                  ) : (
-                    <ImageViewer
-                      imageArray={imageArray}
-                      activeSlide={activeSlide}
-                      setActiveSlide={setActiveSlide}
-                      controls={
-                        <SlideControlsTest
-                          onAddChart={onAddChart}
-                          onAddTable={onAddTable}
-                          onAddImage={onAddImage}
-                          onSummarize={onSummarize}
-                          onAddSlide={onAddSlide}
-                        />
-                      }
-                    />
-                  )}
+
+                  <ImageViewer
+                    imageArray={imageArray}
+                    activeSlide={activeSlide}
+                    setActiveSlide={setActiveSlide}
+                    controls={
+                      <SlideControlsTest
+                        onAddChart={onAddChart}
+                        onAddTable={onAddTable}
+                        onAddImage={onAddImage}
+                        onSummarize={onSummarize}
+                        onAddSlide={onAddSlide}
+                      />
+                    }
+                  />
+
                   {/*                   
                   <PdfViewer
                     pdfUrl={

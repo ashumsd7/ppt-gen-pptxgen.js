@@ -7,7 +7,7 @@ function SlidePagination({activeSlide,setActiveSlide,slidesConfig,setActiveIndex
         onClick={() => {
           if (activeSlide > 1) {
             setActiveSlide(activeSlide - 1);
-            setActiveIndex(activeSlide)
+            setActiveIndex(activeSlide-1)
           }
         }}
         className={`text-gray-600 hover:text-black ${
