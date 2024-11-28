@@ -6,14 +6,15 @@ function Button({
   icon: Icon, // Icon component (optional)
   label = "Button", // Button text (default)
   onClick,
-  children, // Click handler
+  children,
+  className, // Click handler
   ...props // Other props like className, etc.
 }) {
   const isDisabled = state === "disabled";
 
   // Determine button styles based on type and state
   const baseStyles =
-    "font-medium py-2 px-4 rounded-sm focus:outline-none focus:ring-2 transition-all duration-300 rounded-lg";
+    "font-medium py-2 px-4   rounded-sm focus:outline-none focus:ring-2 transition-all duration-300 rounded-lg";
   const solidStyles =
     "bg-[#1f36c7] text-white hover:bg-blue-700 focus:ring-[#1f36c7] disabled:bg-blue-300 disabled:cursor-not-allowed  rounded-lg";
   const outlineStyles =
@@ -25,7 +26,7 @@ function Button({
     <button
       onClick={onClick}
       disabled={isDisabled}
-      className={`${baseStyles} ${buttonStyles} flex items-center gap-2`}
+      className={`${baseStyles} ${buttonStyles} flex  gap-2  justify-center items-center ${className}`}
       {...props}
     >
       {/* Icon (if provided) */}

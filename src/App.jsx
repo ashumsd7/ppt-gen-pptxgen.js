@@ -36,6 +36,8 @@ import ImageViewer from "../src/components/PPT/ImageViewer";
 import Sidebar from "../src/components/PPT/Sidebar";
 import { getCurrentStatusOfPPT } from "./utils/function";
 import Button from "./components/ui/Button";
+import InsertTable from "./components/PPT/InsertTable";
+import InsertImage from "./components/PPT/InsertImage";
 
 // Tab data
 
@@ -527,6 +529,7 @@ function PPTGen() {
   const handleTextButtonClick = () => {
     console.log("From Text button clicked");
     setTextView(true);
+    setIsSidebarOpen(true);
   };
 
   const handleUploadButtonClick = () => {
@@ -613,6 +616,7 @@ function PPTGen() {
   }
   return (
     <div className="relative min-h-screen  ">
+    
       {!isGenerated ? (
         <div className=" flex flex-col border  h-full p-6">
           <h1 className="text-2xl font-bold  text-black">
@@ -785,7 +789,8 @@ function PPTGen() {
         </div>
       )}
 
-      <Sidebar open={isSidebarOpen} setOpen={setIsSidebarOpen} />
+      {/* <Sidebar open={isSidebarOpen} setOpen={setIsSidebarOpen} /> */}
+      <InsertImage isInsertTableOpen={isSidebarOpen}  setIsInsertTableOpen={setIsSidebarOpen} />
     </div>
   );
 }
