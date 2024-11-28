@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import SlidePagination from "./SlidePagination";
+
 
 const ImageViewer = ({ imageArray, activeSlide, setActiveSlide, controls }) => {
   const [activeIndex, setActiveIndex] = useState(0); // Active image index

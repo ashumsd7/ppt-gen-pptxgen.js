@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 
 import pptxgen from "pptxgenjs";
 import { BlobServiceClient } from "@azure/storage-blob";
-import { DocumentViewer } from "react-documents";
+
 
 // import Uppy from "@uppy/core";
 // import "@uppy/core/dist/style.css";
@@ -22,8 +22,7 @@ import {
   generateTextAndTableSlideV8,
   generateTextAndTableSlideV9,
 } from "./utils/helper";
-// import SlideControls from "./PPT/SlideControls";
-// import SlideControlsTest from "./components/PPT/./PPT/SlideControlsTest";
+
 import {
   DEFAULT_CHART_OBJECT,
   DEFAULT_IMAGE_OBJECT,
@@ -33,12 +32,9 @@ import {
 } from "./data";
 import { layouts, templates } from "./data/constant";
 
-import SlidePagination from "./components/PPT/SlidePagination";
 import PdfTextExtractor from "./components/PPT/PDFtextExtractor";
 import DocTextExtractor from "./components/PPT/DocTextExtractor";
 import SlideControlsTest from "./components/PPT/SlideControlsTest";
-import PdfViewer from "./components/PPT/PdfViewer";
-import ReactPdf from "./components/PPT/ReactPdf";
 import ImageViewer from "./components/PPT/ImageViewer";
 
 // Tab data
@@ -59,11 +55,6 @@ function PPTGen() {
   const [isGenerated, setIsGenerated] = useState(false);
   const [selectedChartType, setSelectedChartType] = useState("area");
   const [isLoading, setIsLoading] = useState(false);
-  const ALLOWED_FILES = [
-    "application/pdf",
-    "application/msword",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  ];
 
   // 20Nov
   const [slidesConfig, setSlidesConfig] = useState([]);
@@ -164,20 +155,13 @@ function PPTGen() {
   let pptx = new pptxgen();
 
   const getCurrentStatusOfPPT = () => {
-    console.log("slidesConfg", slidesConfig);
     const prevConfigs = [...slidesConfig];
-    console.log("Length is entire slides", prevConfigs);
     const lastSlide = prevConfigs[activeSlide - 1];
     const lastSlideItems = lastSlide?.slideDataArray;
-    console.log("Last slides items", lastSlideItems);
-    console.log("Last slides items length", lastSlideItems.length);
     if (lastSlideItems.length == 3) {
       console.log("Add new slide.... and add chart on that");
     }
-
     const isTextAvailable = lastSlideItems.some((item) => item.type === "text");
-    console.log("isTextAvailable", isTextAvailable);
-
     return { prevConfigs, lastSlide, lastSlideItems, isTextAvailable };
   };
 
@@ -558,8 +542,6 @@ function PPTGen() {
   async function generateAndUploadPPT(prevSlidesData = lastSlides, reordered) {
     //  logic to decide layout
 
-    console.log("*****", slidesConfig);
-
     layoutGenerator(pptx, [
       { ...defaultSlideData, type: "chart", layout: "v1" },
     ]);
@@ -567,10 +549,6 @@ function PPTGen() {
     return;
   }
 
-  // Handle form submission for generating PPT
-  const handleGeneratePPT = () => {
-    generateAndUploadPPT();
-  };
   const handleRemove = (slideOrder) => {
     // Clone the current slides array
     const reorderedSlides = [...lastSlides];
@@ -791,8 +769,7 @@ function PPTGen() {
             <span
               className="p-2 cursor-pointer"
               onClick={() => {
-                if(isLoading)
-                return
+                if (isLoading) return;
                 setIsGenerated(false);
               }}
             >
@@ -826,23 +803,9 @@ function PPTGen() {
 
           {/* Main Content - PPT Viewer and Reorder Section */}
           <main className="w-full p-2  flex  border flex-col ">
-            {/* <SlidePagination
-              activeSlide={activeSlide}
-              slidesConfig={slidesConfig}
-              setActiveSlide={setActiveSlide}
-            /> */}
             <div className="flex gap-2  w-full">
               {latestBlob ? (
                 <>
-                  {/* <DocumentViewer
-                    style={{ height: "50vh", width: "100%" }}
-                    queryParams="hl=NL"
-                    url={latestBlob}
-                    viewerUrl={encodeURIComponent(latestBlob)}
-                    viewer="office"
-                    overrideLocalhost="https://react-doc-viewer.firebaseapp.com/"
-                  /> */}
-
                   <ImageViewer
                     imageArray={imageArray}
                     activeSlide={activeSlide}
@@ -857,13 +820,6 @@ function PPTGen() {
                       />
                     }
                   />
-
-                  {/*                   
-                  <PdfViewer
-                    pdfUrl={
-                      "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
-                    }
-                  /> */}
                 </>
               ) : (
                 <p className="text-3xl text-gray-600 text-center py-10">
@@ -871,17 +827,18 @@ function PPTGen() {
                 </p>
               )}
             </div>
+            {/* <DocumentViewer
+              style={{ height: "50vh", width: "100%" }}
+              queryParams="hl=NL"
+              url={latestBlob}
+              viewerUrl={encodeURIComponent(latestBlob)}
+              viewer="office"
+              overrideLocalhost="https://react-doc-viewer.firebaseapp.com/"
+            /> */}
           </main>
           {/* <SlideControls
             handleUploadButtonClick={handleDropdownChange}
             handleDropdownChange={handleDropdownChange}
-          /> */}
-          {/* <SlideControlsTest
-            onAddChart={onAddChart}
-            onAddTable={onAddTable}
-            onAddImage={onAddImage}
-            onSummarize={onSummarize}
-            onAddSlide={onAddSlide}
           /> */}
         </div>
       )}
