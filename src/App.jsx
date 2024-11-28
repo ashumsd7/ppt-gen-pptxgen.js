@@ -3,6 +3,8 @@ import React, { useState } from "react";
 import pptxgen from "pptxgenjs";
 import { BlobServiceClient } from "@azure/storage-blob";
 import { RiDownload2Fill } from "react-icons/ri";
+import { FaCheckCircle } from "react-icons/fa";
+import { TbClipboardTypography } from "react-icons/tb";
 import {
   generateTextAndTableSlideV1,
   generateTextAndTableSlideV10,
@@ -16,7 +18,8 @@ import {
   generateTextAndTableSlideV8,
   generateTextAndTableSlideV9,
 } from "./utils/helper";
-
+import { GrAttachment, GrFormAttachment } from "react-icons/gr";
+import { RiAiGenerate } from "react-icons/ri";
 import {
   DEFAULT_CHART_OBJECT,
   DEFAULT_IMAGE_OBJECT,
@@ -632,13 +635,13 @@ function PPTGen() {
               onClick={handleTextButtonClick}
               type={textView ? "solid" : "outline"}
             >
-              From Text
+             <TbClipboardTypography className="text-2xl" /> From Text
             </Button>
             <Button
               onClick={handleUploadButtonClick}
               type={!textView ? "solid" : "outline"}
             >
-              Upload a File
+             <GrFormAttachment className="text-2xl"/> Upload a File
             </Button>
           </div>
 
@@ -678,31 +681,33 @@ function PPTGen() {
             <h2 className="text-xl font-semibold mb-3">Select Templates</h2>
             <div className="flex space-x-4 overflow-x-auto ">
               {templates.map((template) => (
-                <div
-                  key={template.id}
-                  onClick={() => {
-                    handleSelectTemplate(template);
-                  }}
-                  className={`p-4 w-[245px] h-[136px] border flex items-center justify-center shadow-md cursor-pointer transition duration-150
+                <div className="flex flex-col gap-2 justify-center items-center">
+                  <div
+                    key={template.id}
+                    onClick={() => {
+                      handleSelectTemplate(template);
+                    }}
+                    className={`p-4 w-[245px] relative h-[136px] border flex items-center justify-center shadow-md cursor-pointer transition duration-150
       ${
         selectedTemplate.id === template.id
           ? "text-2xl font-semibold"
           : "text-gray-700 hover:bg-gray-500"
       }
    `}
-                  style={{ backgroundColor: template.bgColor }} // Inline style for dynamic background color
-                >
-                  {template.name} {selectedTemplate.id === template.id && ""}
+                    style={{ backgroundColor: template.bgColor }} // Inline style for dynamic background color
+                  >
+                    {selectedTemplate.id === template.id && (
+                      <FaCheckCircle className="absolute top-2 h-5 w-5 right-2 text-[#1f36c7] bg-white rounded-full  font-bold" />
+                    )}
+                  </div>
+                  <span> {template.name}</span>
                 </div>
               ))}
             </div>
 
             <div className="mt-6 flex justify-end ">
-              <Button
-                disabled={isLoading}
-                onClick={handleGenerateSlides}
-              >
-                {isLoading ? "Generating..." : " Generate PPT"}
+              <Button disabled={isLoading} onClick={handleGenerateSlides}>
+              <RiAiGenerate className="text-xl"/>  {isLoading ? "Generating..." : " Generate PPT"}
               </Button>
             </div>
             {/* Displaying the selected template */}
