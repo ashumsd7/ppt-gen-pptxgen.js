@@ -11,9 +11,9 @@ const ImageViewer = ({ imageArray, activeSlide, setActiveSlide, controls }) => {
   };
 
   return (
-    <div className="flex h-[90vh]  gap-4 border  w-full">
+    <div className="flex h-[90vh]  gap-4   w-full">
       {/* Left side thumbnail container */}
-      <div className="w-1/5 overflow-y-auto bg-white ">
+      <div className="w-1/5 overflow-y-auto bg-white  ">
         {imageArray.length > 0 ? (
           imageArray.map((image, index) => (
             <div
@@ -28,7 +28,7 @@ const ImageViewer = ({ imageArray, activeSlide, setActiveSlide, controls }) => {
                 <img
                   src={image}
                   alt={`Thumbnail ${index + 1}`}
-                  className="w-full h-[190px] object- -mt-3 rounded"
+                  className="w-full h-[190px] object- -mt-3 rounded shadow-lg"
                 />
               </div>
             </div>
@@ -40,11 +40,10 @@ const ImageViewer = ({ imageArray, activeSlide, setActiveSlide, controls }) => {
 
       {/* Right side main image display */}
       <div className="flex-1 flex flex-col  p-8  bg-[#f7f8ff]">
-        <div className="h-[56px] bg-white flex justify-center items-center">
+        <div className="h-[56px] bg-white flex justify-center items-center shadow-sm border-b border-gray-200">
           <div className="flex items-center justify-center space-x-4">
             <button
               onClick={() => {
-                console.log('******',activeIndex)
                 if (activeIndex >= 1) {
                   setActiveSlide(activeIndex-1);
                   setActiveIndex(activeIndex - 1);

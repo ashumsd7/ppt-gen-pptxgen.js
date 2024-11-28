@@ -1,14 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 
 import pptxgen from "pptxgenjs";
 import { BlobServiceClient } from "@azure/storage-blob";
-
-
-// import Uppy from "@uppy/core";
-// import "@uppy/core/dist/style.css";
-// import "@uppy/dashboard/dist/style.css";
-// import PdfTextExtractor from "./PPT/PDFtextExtractor";
-// import DocTextExtractor from "./PPT/DocTextExtractor";
+import { RiDownload2Fill } from "react-icons/ri";
 import {
   generateTextAndTableSlideV1,
   generateTextAndTableSlideV10,
@@ -30,12 +24,14 @@ import {
   DEFAULT_TEXT_OBJECT,
   defaultSlideData,
 } from "./data";
-import { layouts, templates } from "./data/constant";
+import { templates } from "./data/constant";
 
-import PdfTextExtractor from "./components/PPT/PDFtextExtractor";
-import DocTextExtractor from "./components/PPT/DocTextExtractor";
-import SlideControlsTest from "./components/PPT/SlideControlsTest";
-import ImageViewer from "./components/PPT/ImageViewer";
+import PdfTextExtractor from "../src/components/PPT/PDFtextExtractor";
+import DocTextExtractor from "../src/components/PPT/DocTextExtractor";
+import SlideControlsTest from "../src/components/PPT/SlideControlsTest";
+import ImageViewer from "../src/components/PPT/ImageViewer";
+import Sidebar from "../src/components/PPT/Sidebar";
+import { getCurrentStatusOfPPT } from "./utils/function";
 
 // Tab data
 
@@ -45,26 +41,21 @@ function PPTGen() {
   const [blobList, setBlobList] = useState([]);
   const [latestSlides, setLatestSlides] = useState([]);
   const [slideMode, setSlideMode] = useState("text");
-  const [layout, setLayout] = useState({ label: " V1", value: "v1" });
   const [pptName, setPptName] = useState(
     "United_" + Math.ceil(Math.random() * 100)
   );
+  // for output image array
   const [imageArray, setImageArray] = useState([]);
 
   const [textView, setTextView] = useState(true);
   const [isGenerated, setIsGenerated] = useState(false);
-  const [selectedChartType, setSelectedChartType] = useState("area");
   const [isLoading, setIsLoading] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // 20Nov
   const [slidesConfig, setSlidesConfig] = useState([]);
   const [activeSlide, setActiveSlide] = useState(1);
 
-  const [slideName, setSlideName] = useState(
-    `Slide_${
-      slideMode === "chart" ? `${slideMode}_${selectedChartType}_` : slideMode
-    }_${blobList.length + 1}`
-  );
   const [selectedTemplate, setSelectedTemplate] = useState({
     id: 0,
     name: "Blank Template",
@@ -75,35 +66,18 @@ function PPTGen() {
     localStorage.setItem("PPT_BG", template.bgColor.split("#")[1]);
   };
 
-  // Init Uppy instance
-  // const uppy = new Uppy({
-  //   restrictions: {
-  //     maxNumberOfFiles: 1,
-  //     allowedFileTypes: ALLOWED_FILES,
-  //   },
-  //   autoProceed: true,
-  // });
-
+  // ------------------------- tokens----------------------
   const sasToken =
     "sv=2022-11-02&ss=bfqt&srt=sco&sp=rwdlacupiytfx&se=2025-06-04T13:26:22Z&st=2024-11-05T05:26:22Z&spr=https,http&sig=pAcLQDyT%2BRNtUABOSobtIhb%2FuSA43rbiU0btYf%2FVttw%3D";
   const containerName = `cmpptgencontainerv1`;
   const storageAccountName = "codemonkpptgen";
 
-  const [latestBlob, setLatestBlob] = useState(
-    "https://testingfeatures.blob.core.windows.net/test/POC%20(1).pptx?sp=r&st=2024-10-25T06:18:48Z&se=2024-11-25T14:18:48Z&spr=https&sv=2022-11-02&sr=b&sig=NtLNYZO3tUTV9IhjnKJIKv2d7ePXcEHnQd%2F02IXvQlg%3D"
-  );
-
+  const [latestBlob, setLatestBlob] = useState("");
   const [lastSlides, setLastSlides] = useState([]);
+  // when pdf is uploaded
   const [pdfUrl, setPdfUrl] = useState();
 
-  useEffect(() => {
-    setSlideName(
-      `Slide_${
-        slideMode === "chart" ? `${slideMode}_${selectedChartType}_` : slideMode
-      }_${blobList.length + 1}`
-    );
-  }, [slideMode]);
-
+  // getting all prev ppts
   const getBlobsInContainer = async (containerClient) => {
     const returnedBlobUrls = [];
     for await (const blob of containerClient.listBlobsFlat()) {
@@ -114,15 +88,10 @@ function PPTGen() {
     }
 
     setBlobList(returnedBlobUrls);
-    setSlideName(
-      `Slide_${
-        slideMode === "chart" ? `${slideMode}_${selectedChartType}_` : slideMode
-      }_${blobList.length + 1}`
-    );
-
     return returnedBlobUrls;
   };
 
+  // uploading  pp tto azure and return URL
   async function uploadFileToBlob2(fileBlob, fileName) {
     setIsLoading(true);
     try {
@@ -145,7 +114,8 @@ function PPTGen() {
 
       const fileUrl = `https://${storageAccountName}.blob.core.windows.net/${containerName}/${fileName}`;
       console.log("File URL:", fileUrl);
-      onTestPdfConvertor(fileUrl);
+      // Converting PPT to Images ( using backend)
+      onConvertPPT2Images(fileUrl);
       return fileUrl;
     } catch (error) {
       console.error("Error uploading file:", error);
@@ -154,37 +124,19 @@ function PPTGen() {
   }
   let pptx = new pptxgen();
 
-  const getCurrentStatusOfPPT = () => {
-    const prevConfigs = [...slidesConfig];
-    const lastSlide = prevConfigs[activeSlide - 1];
-    const lastSlideItems = lastSlide?.slideDataArray;
-    if (lastSlideItems.length == 3) {
-      console.log("Add new slide.... and add chart on that");
-    }
-    const isTextAvailable = lastSlideItems.some((item) => item.type === "text");
-    return { prevConfigs, lastSlide, lastSlideItems, isTextAvailable };
-  };
-
   function onAddChart() {
     // Function logic for adding a chart
     // before adding  chart we can expect a file upload and then preapre a chart
-
     // if isTextAvailable is available then we need to add new slide as chart and v2 half  half
     // here we can also  decide 30% text vs 50% text
     const { prevConfigs, lastSlide, lastSlideItems, isTextAvailable } =
-      getCurrentStatusOfPPT();
-    console.log("lastSlideItems lastSlideItems", lastSlideItems);
-    console.log("isTextAvailable", isTextAvailable);
-    console.log("lastSlide", lastSlide);
-    console.log("prevConfigs", prevConfigs);
-
+      getCurrentStatusOfPPT(slidesConfig,activeSlide);
     if (isTextAvailable && lastSlideItems.length == 1) {
       console.log("Text ✅, No  Media : Add in this slide v1=>v2");
       lastSlideItems.push({
         ...DEFAULT_CHART_OBJECT,
       });
       lastSlide.layout = "v2";
-
       setSlidesConfig(prevConfigs);
       layoutGenerator(pptx, prevConfigs);
       return;
@@ -229,7 +181,7 @@ function PPTGen() {
   function onAddTable() {
     // Function logic for adding a table
     const { prevConfigs, lastSlide, lastSlideItems, isTextAvailable } =
-      getCurrentStatusOfPPT();
+      getCurrentStatusOfPPT(slidesConfig,activeSlide);
     // if isTextAvailable is available then we need to add new slide as chart and v2 half  half
     // here we can also  decide 30% text vs 50% text
 
@@ -290,7 +242,7 @@ function PPTGen() {
     // Function logic for adding an image
     // Function logic for adding a table
     const { prevConfigs, lastSlide, lastSlideItems, isTextAvailable } =
-      getCurrentStatusOfPPT();
+      getCurrentStatusOfPPT(slidesConfig,activeSlide);
     // if isTextAvailable is available then we need to add new slide as chart and v2 half  half
     // here we can also  decide 30% text vs 50% text
 
@@ -499,13 +451,10 @@ function PPTGen() {
           break;
 
         default:
-          console.log("Unknown layout value: " + layout.value);
+          console.log("Unknown layout value: " + slideData.layout);
           break;
       }
     });
-
-    // Create a full-slide rectangle with a gradient-like background
-    // slide.background = { color: "EFF212" }; // Light gray background
 
     pptx.write("base64").then(async (base64String) => {
       const byteCharacters = atob(base64String);
@@ -520,15 +469,10 @@ function PPTGen() {
 
       // Upload the Blob to Azure Blob Storage
       const res = await uploadFileToBlob2(pptBlob, `Codemonk.pptx`);
-
       setLatestBlob(res);
-
       const prevArr = [...latestSlides];
       prevArr.push(res);
-
       setLatestSlides(prevArr);
-      // if (!reordered) setLatestSlides(prevArr);
-
       const blobService = new BlobServiceClient(
         `https://${storageAccountName}.blob.core.windows.net/?${sasToken}`
       );
@@ -585,6 +529,8 @@ function PPTGen() {
     console.log("Upload a File button clicked");
     setTextView(false);
   };
+
+  // / this is CTA of page 1
   const handleGenerateSlides = () => {
     console.log("Upload a File button clicked");
     setActiveSlide(1);
@@ -638,25 +584,28 @@ function PPTGen() {
     }
   }
 
-  function onTestPdfConvertor(url) {
+  function onConvertPPT2Images(url) {
     const pptxUrl =
       url ||
       "https://codemonkpptgen.blob.core.windows.net/cmpptgencontainerv1/Slide_text_379_1732692286147.pptx";
     convertPptxToPdf(pptxUrl).then((pdfUrl) => {
-      console.log(">>>", pdfUrl);
       if (pdfUrl) {
         // Use the PDF URL as needed, e.g., display it or provide a download link
-        console.log("Download PDF from:>>>>>>>> 123", pdfUrl);
-        setPdfUrl(pdfUrl);
+        console.log("All done", pdfUrl);
       }
     });
   }
 
+  // when Download clicked
   function onClickDownload(type = "pdf") {
     const link = document.createElement("a");
     link.href = type == "pdf" ? pdfUrl : latestBlob;
     link.download = "document.pdf"; // Specify the name of the downloaded file
     link.click();
+  }
+
+  function onEditSlide() {
+    setIsSidebarOpen(true);
   }
   return (
     <div className="relative min-h-screen  ">
@@ -768,33 +717,25 @@ function PPTGen() {
           <div className="flex gap-2 justify-between py-2 px-6">
             <span
               className="p-2 cursor-pointer"
+
               onClick={() => {
                 if (isLoading) return;
                 setIsGenerated(false);
               }}
             >
-              {isLoading ? "Please Wait..." : "Go back"}
+              {isLoading ? "Updating PPT..." : "Go back"}
             </span>
 
             <div className="flex gap-2">
-              {pdfUrl && (
-                <button
-                  onClick={() => {
-                    onClickDownload("pdf");
-                  }}
-                  className={` border border-blue-600  font-medium py-2 px-4 text-blue-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 `}
-                >
-                  Download as PDF
-                </button>
-              )}
+  
               {latestBlob && (
                 <button
                   onClick={() => {
                     onClickDownload("ppt");
                   }}
-                  className={` border border-blue-600  font-medium py-2 px-4 text-blue-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 `}
+                  className={` border border-blue-600 flex items-center gap-1 text-white font-medium py-2 px-4 bg-blue-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 `}
                 >
-                  Download as PPT
+                  <RiDownload2Fill /> Download
                 </button>
               )}
             </div>
@@ -817,6 +758,8 @@ function PPTGen() {
                         onAddImage={onAddImage}
                         onSummarize={onSummarize}
                         onAddSlide={onAddSlide}
+                        onEditSlide={onEditSlide}
+                        isLoading={isLoading}
                       />
                     }
                   />
@@ -842,6 +785,8 @@ function PPTGen() {
           /> */}
         </div>
       )}
+
+      <Sidebar open={isSidebarOpen} setOpen={setIsSidebarOpen} />
     </div>
   );
 }
