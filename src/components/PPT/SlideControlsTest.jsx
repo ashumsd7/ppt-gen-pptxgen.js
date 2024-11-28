@@ -1,4 +1,5 @@
 import React from "react";
+import Button from "../ui/Button";
 // import Dropdown from "../ui/Dropdown";
 const options = [
   { value: "move-table", label: "Move Table" },
@@ -17,28 +18,16 @@ function SlideControlsTest({
 }) {
   return (
     <div className="py-4 flex gap-2">
-      <button
-        disabled={isLoading}
-        onClick={onAddChart}
-        className={` border border-blue-600  font-medium py-2 px-4 text-blue-700 rounded-lg  focus:outline-none focus:ring-2 focus:ring-blue-500 `}
-      >
+      <Button type="outline" disabled={isLoading} onClick={onAddChart}>
         Add Chart
-      </button>
+      </Button>
 
-      <button
-        disabled={isLoading}
-        onClick={onAddImage}
-        className={` border border-blue-600  font-medium py-2 px-4 text-blue-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 `}
-      >
+      <Button  type="outline" disabled={isLoading} onClick={onAddImage}>
         Add Image
-      </button>
-      <button
-        disabled={isLoading}
-        onClick={onAddTable}
-        className={` border border-blue-600  font-medium py-2 px-4 text-blue-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 `}
-      >
+      </Button>
+      <Button type="outline" disabled={isLoading} onClick={onAddTable}>
         Add Table
-      </button>
+      </Button>
 
       {/* <button
         onClick={onSummarize}
@@ -46,20 +35,12 @@ function SlideControlsTest({
       >
       Summarize Text
       </button> */}
-      <button
-        disabled={isLoading}
-        onClick={onAddSlide}
-        className={` border border-blue-600  font-medium py-2 px-4 text-blue-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 `}
-      >
+      <Button type="outline"  disabled={isLoading} onClick={onAddSlide}>
         Add Slide
-      </button>
-      <button
-        disabled={isLoading}
-        onClick={onEditSlide}
-        className={` border border-blue-600  font-medium py-2 px-4 text-blue-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 `}
-      >
+      </Button>
+      <Button type="outline" disabled={isLoading} onClick={onEditSlide}>
         Edit Slide
-      </button>
+      </Button>
     </div>
   );
 }

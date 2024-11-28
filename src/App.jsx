@@ -32,6 +32,7 @@ import SlideControlsTest from "../src/components/PPT/SlideControlsTest";
 import ImageViewer from "../src/components/PPT/ImageViewer";
 import Sidebar from "../src/components/PPT/Sidebar";
 import { getCurrentStatusOfPPT } from "./utils/function";
+import Button from "./components/ui/Button";
 
 // Tab data
 
@@ -130,7 +131,7 @@ function PPTGen() {
     // if isTextAvailable is available then we need to add new slide as chart and v2 half  half
     // here we can also  decide 30% text vs 50% text
     const { prevConfigs, lastSlide, lastSlideItems, isTextAvailable } =
-      getCurrentStatusOfPPT(slidesConfig,activeSlide);
+      getCurrentStatusOfPPT(slidesConfig, activeSlide);
     if (isTextAvailable && lastSlideItems.length == 1) {
       console.log("Text ✅, No  Media : Add in this slide v1=>v2");
       lastSlideItems.push({
@@ -181,7 +182,7 @@ function PPTGen() {
   function onAddTable() {
     // Function logic for adding a table
     const { prevConfigs, lastSlide, lastSlideItems, isTextAvailable } =
-      getCurrentStatusOfPPT(slidesConfig,activeSlide);
+      getCurrentStatusOfPPT(slidesConfig, activeSlide);
     // if isTextAvailable is available then we need to add new slide as chart and v2 half  half
     // here we can also  decide 30% text vs 50% text
 
@@ -242,7 +243,7 @@ function PPTGen() {
     // Function logic for adding an image
     // Function logic for adding a table
     const { prevConfigs, lastSlide, lastSlideItems, isTextAvailable } =
-      getCurrentStatusOfPPT(slidesConfig,activeSlide);
+      getCurrentStatusOfPPT(slidesConfig, activeSlide);
     // if isTextAvailable is available then we need to add new slide as chart and v2 half  half
     // here we can also  decide 30% text vs 50% text
 
@@ -627,22 +628,18 @@ function PPTGen() {
             />
           </div>
           <div className="flex gap-4">
-            <button
+            <Button
               onClick={handleTextButtonClick}
-              className={` border  border-blue-600  font-medium py-2 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                textView && "bg-blue-600 text-gray-50"
-              }`}
+              type={textView ? "solid" : "outline"}
             >
               From Text
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={handleUploadButtonClick}
-              className={` border border-blue-600  font-medium py-2 px-4 rounded-lg  focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                !textView && "bg-blue-600 text-gray-50"
-              }`}
+              type={!textView ? "solid" : "outline"}
             >
               Upload a File
-            </button>
+            </Button>
           </div>
 
           {/* <OfficeFileTextExtractor/> */}
@@ -701,13 +698,12 @@ function PPTGen() {
             </div>
 
             <div className="mt-6 flex justify-end ">
-              <button
+              <Button
                 disabled={isLoading}
                 onClick={handleGenerateSlides}
-                className="bg-blue-600 text-white font-medium py-2 px-4 rounded-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {isLoading ? "Generating..." : " Generate PPT"}
-              </button>
+              </Button>
             </div>
             {/* Displaying the selected template */}
           </div>
@@ -717,7 +713,6 @@ function PPTGen() {
           <div className="flex gap-2 justify-between py-2 px-6">
             <span
               className="p-2 cursor-pointer"
-
               onClick={() => {
                 if (isLoading) return;
                 setIsGenerated(false);
@@ -727,16 +722,15 @@ function PPTGen() {
             </span>
 
             <div className="flex gap-2">
-  
               {latestBlob && (
-                <button
+                <Button
                   onClick={() => {
                     onClickDownload("ppt");
                   }}
-                  className={` border border-blue-600 flex items-center gap-1 text-white font-medium py-2 px-4 bg-blue-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 `}
                 >
+                  {" "}
                   <RiDownload2Fill /> Download
-                </button>
+                </Button>
               )}
             </div>
           </div>
