@@ -4,14 +4,14 @@ import Button from "../ui/Button";
 import FileUploader from "./FileUploader";
 import { RiAiGenerate } from "react-icons/ri";
 import { CiCircleInfo } from "react-icons/ci";
-function InsertTable({ isInsertTableOpen, setIsInsertTableOpen }) {
+function InsertTable({ isOpen, setIsOpen }) {
   const [isContentVisible, setIsContentVisible] = useState(false);
   const [slideContent, setSlideContent] = useState("hello");
   const [tableTitle, setTableTitle] = useState("Ice Cream Flavor Sales");
   return (
     <Sidebar
-      open={isInsertTableOpen}
-      setOpen={setIsInsertTableOpen}
+      open={isOpen}
+      setOpen={setIsOpen}
       title="Insert Table"
     >
       <div className="flex justify-between gap-4 mb-4">
@@ -40,7 +40,7 @@ function InsertTable({ isInsertTableOpen, setIsInsertTableOpen }) {
 
           <FileUploader />
 
-          <div className="text-sm -mt-2 ">Supported format: Excel, CSV</div>
+          <div className="text-sm -mt-2 mb-4">Supported format: Excel, CSV</div>
 
           <div className="p-2 bg-gray-100 flex gap-3 items-center rounded-md text-sm">
             <CiCircleInfo className="text-3xl mt-1 text-blue-500" /> This will be

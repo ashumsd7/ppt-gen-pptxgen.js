@@ -790,7 +790,8 @@ function PPTGen() {
       )}
 
       {/* <Sidebar open={isSidebarOpen} setOpen={setIsSidebarOpen} /> */}
-      <InsertImage isInsertTableOpen={isSidebarOpen}  setIsInsertTableOpen={setIsSidebarOpen} />
+      {/* <InsertImage isOpen={isSidebarOpen}  setIsOpen={setIsSidebarOpen} /> */}
+      <InsertTable isOpen={isSidebarOpen}  setIsOpen={setIsSidebarOpen} />
     </div>
   );
 }
