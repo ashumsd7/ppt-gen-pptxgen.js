@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import Sidebar from "./Sidebar";
+import Sidebar from "../PPT/Sidebar";
 import Button from "../ui/Button";
-import FileUploader from "./FileUploader";
+
 import { RiAiGenerate } from "react-icons/ri";
 import { CiCircleInfo } from "react-icons/ci";
-function InsertTable({ isOpen, setIsOpen }) {
+import FileUploader from "../PPT/FileUploader";
+function InsertChart({ isOpen, setIsOpen, onInsertChart }) {
   const [isContentVisible, setIsContentVisible] = useState(false);
   const [slideContent, setSlideContent] = useState("hello");
   const [tableTitle, setTableTitle] = useState("Ice Cream Flavor Sales");
@@ -12,7 +13,11 @@ function InsertTable({ isOpen, setIsOpen }) {
     <Sidebar
       open={isOpen}
       setOpen={setIsOpen}
-      title="Insert Table"
+      title="Insert Chart"
+      onConfirm={() => {
+        onInsertChart();
+        setIsOpen(false)
+      }}
     >
       <div className="flex justify-between gap-4 mb-4">
         <Button
@@ -42,11 +47,11 @@ function InsertTable({ isOpen, setIsOpen }) {
 
           <div className="text-sm -mt-2 mb-4">Supported format: Excel, CSV</div>
 
-          <div className="p-2 bg-gray-100 flex gap-3 items-center rounded-md text-sm">
-            <CiCircleInfo className="text-3xl mt-1 text-blue-500" /> This will be
-            the alert line which shows the main function of this alert
+          <div className="p-2 bg-gray-100 flex gap-3 items-start rounded-md text-sm">
+            <CiCircleInfo className="text-xl mt-1 text-blue-500" /> A slide can
+            have up to 2 media. Additional media will be added to a new slide.
           </div>
-          <div>
+          {/* <div>
             <label className="text-sm font-semibold text-gray-700 mb-1 block">
               Title
             </label>
@@ -56,17 +61,18 @@ function InsertTable({ isOpen, setIsOpen }) {
               onChange={(e) => setTableTitle(e.target.value)}
               className=" p-2 border border-gray-300 w-[400px] rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-          </div>
+          </div> */}
         </div>
       ) : (
         <div className="flex flex-col gap-2">
-          <h2 className="text-base font-bold ">Content</h2>
-          <textarea
+          <h2 className="text-base font-bold ">Chart Type</h2>
+          {/* <textarea
             placeholder="Enter content here"
             value={slideContent}
             onChange={(e) => setSlideContent(e.target.value)}
             className="w-full h-[200px] p-2 border text-sm font-serif leading-10  border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          /> */}
+          Selection
           <Button
             onClick={() => {
               setIsContentVisible(true);
@@ -74,13 +80,12 @@ function InsertTable({ isOpen, setIsOpen }) {
             className=""
             type={"outline"}
           >
-            <RiAiGenerate /> Generate Table
+            <RiAiGenerate /> Generate Chart
           </Button>
-
           <div className="p-2 bg-gray-100 flex gap-3 items-start rounded-md text-sm">
-            <CiCircleInfo className="text-xl mt-1 text-blue-500" /> Tables
-            generated from slide content will remain on the same slide; excess
-            media moves to the next slide.
+            <CiCircleInfo className="text-xl mt-1 text-blue-500" />
+            Charts generated from slide content will remain on the same slide;
+            excess media moves to the next slide.
           </div>
         </div>
       )}
@@ -88,4 +93,4 @@ function InsertTable({ isOpen, setIsOpen }) {
   );
 }
 
-export default InsertTable;
+export default InsertChart;

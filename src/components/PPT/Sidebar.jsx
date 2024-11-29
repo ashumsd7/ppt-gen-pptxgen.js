@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Button from '../ui/Button';
 
-function Sidebar({ open, setOpen, title='Edit Slide', children }) {
+function Sidebar({ open, setOpen, title='Edit Slide', children,onConfirm }) {
   const [visible, setVisible] = useState(false); // Controls animation visibility state
 
   // Manage fade-in and slide-in animation with side effects
@@ -47,7 +47,7 @@ function Sidebar({ open, setOpen, title='Edit Slide', children }) {
           >
             Cancel
           </button>
-          <Button >
+          <Button onClick={onConfirm}>
            Insert
           </Button>
         </div>

@@ -5,6 +5,8 @@ import { BlobServiceClient } from "@azure/storage-blob";
 import { RiDownload2Fill } from "react-icons/ri";
 import { FaCheckCircle } from "react-icons/fa";
 import { TbClipboardTypography } from "react-icons/tb";
+import { DocumentViewer } from "react-documents";
+
 import {
   generateTextAndTableSlideV1,
   generateTextAndTableSlideV10,
@@ -36,8 +38,10 @@ import ImageViewer from "../src/components/PPT/ImageViewer";
 import Sidebar from "../src/components/PPT/Sidebar";
 import { getCurrentStatusOfPPT } from "./utils/function";
 import Button from "./components/ui/Button";
-import InsertTable from "./components/PPT/InsertTable";
-import InsertImage from "./components/PPT/InsertImage";
+// import InsertTable from "./components/PPT/InsertTable";
+import InsertImage from "./components/insert/InsertImage";
+import InsertChart from "./components/insert/InsertChart";
+import InsertTable from "./components/insert/InsertTable";
 
 // Tab data
 
@@ -71,6 +75,12 @@ function PPTGen() {
     setSelectedTemplate(template);
     localStorage.setItem("PPT_BG", template.bgColor.split("#")[1]);
   };
+
+
+  // ______Sidebar state__
+  const [isInsertChartOpen, setIsInsertChartOpen] = useState(false);
+  const [isInsertTableOpen, setIsInsertTableOpen] = useState(false);
+  const [isInsertImageOpen, setIsInsertImageOpen] = useState(false);
 
   // ------------------------- tokens----------------------
   const sasToken =
@@ -756,9 +766,15 @@ function PPTGen() {
                     setActiveSlide={setActiveSlide}
                     controls={
                       <SlideControlsTest
-                        onAddChart={onAddChart}
-                        onAddTable={onAddTable}
-                        onAddImage={onAddImage}
+                        onAddChart={()=>{
+                          setIsInsertChartOpen(true)
+                        }}
+                        onAddTable={()=>{
+                          setIsInsertTableOpen(true)
+                        }}
+                        onAddImage={()=>{
+                          setIsInsertImageOpen(true)
+                        }}
                         onSummarize={onSummarize}
                         onAddSlide={onAddSlide}
                         onEditSlide={onEditSlide}
@@ -790,8 +806,9 @@ function PPTGen() {
       )}
 
       {/* <Sidebar open={isSidebarOpen} setOpen={setIsSidebarOpen} /> */}
-      {/* <InsertImage isOpen={isSidebarOpen}  setIsOpen={setIsSidebarOpen} /> */}
-      <InsertTable isOpen={isSidebarOpen}  setIsOpen={setIsSidebarOpen} />
+      <InsertImage isOpen={isInsertImageOpen}  setIsOpen={setIsInsertImageOpen} onInsertImage={onAddImage} />
+      <InsertTable isOpen={isInsertTableOpen}  setIsOpen={setIsInsertTableOpen} onInsertTable={onAddTable} />
+      <InsertChart isOpen={isInsertChartOpen}  setIsOpen={setIsInsertChartOpen} onInsertChart={onAddChart} />
     </div>
   );
 }

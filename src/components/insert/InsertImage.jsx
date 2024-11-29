@@ -1,16 +1,20 @@
 import React, { useState } from "react";
-import Sidebar from "./Sidebar";
+import Sidebar from "../PPT/Sidebar";
 import Button from "../ui/Button";
-import FileUploader from "./FileUploader";
+import FileUploader from "../PPT/FileUploader";
 import { RiAiGenerate } from "react-icons/ri";
 import { CiCircleInfo } from "react-icons/ci";
-function InsertImage({ isOpen, setIsOpen }) {
+function InsertImage({ isOpen, setIsOpen,onInsertImage }) {
   const [isUploaded, setIsUploaded] = useState(false);
   return (
     <Sidebar
       open={isOpen}
       setOpen={setIsOpen}
       title="Insert Image"
+      onConfirm={() => {
+        onInsertImage();
+        setIsOpen(false)
+      }}
     >
       {!isUploaded ? (
         <div>
