@@ -539,7 +539,7 @@ function PPTGen() {
   const handleTextButtonClick = () => {
     console.log("From Text button clicked");
     setTextView(true);
-    setIsSidebarOpen(true);
+    setIsInsertChartOpen(true);
   };
 
   const handleUploadButtonClick = () => {
